@@ -6,7 +6,7 @@ Source: `HANDOFF.md` (steps 1 to 8), reordered so a deploy happens early and eve
 | Topic | Decision |
 |---|---|
 | Repo | `vikas434/Saarthi-ai`, **private**. Commits use the GitHub noreply address; old history rewritten to it. |
-| Database | Supabase project `saarthi`, region ap-south-1 (Mumbai). One project, schemas `staging` and `production`, one DB role per schema. SQLite stays for local and tests. |
+| Database | Railway Postgres, one per environment (`staging`, `production`). SQLite stays for local and tests. (Supabase was the first choice; blocked by an overdue invoice in another org, 2026-11-11.) |
 | Hosting | Railway, personal workspace, Railway subdomain. Environments `staging` and `production`. |
 | Deploy flow | Push to `main` → CI green → auto-deploy to staging → smoke test → promote to production. |
 | Auth | Clerk, same app as Idli AI. Admin = `TEACHER_EMAIL`, agents = `STUDENT_EMAILS`. Everyone else sees "Your request is received. We will review and approve." Vikas adds Railway URLs in the Clerk dashboard. |
@@ -44,9 +44,9 @@ Source: `HANDOFF.md` (steps 1 to 8), reordered so a deploy happens early and eve
 - `app/store.py` works on SQLite and Postgres; numbered SQL migrations run at startup; ADR 0002.
 - Tests and evals use their own throwaway database.
 - CI runs the suite on SQLite and on a Postgres service container.
-- Create Supabase project, schemas, roles. Connection strings go to Railway only.
+- Railway Postgres in each environment; `DATABASE_URL` is a Railway reference variable, never in the repo.
 - **Done when:** same tests pass on both databases in CI.
-- **Status:** code and CI done 2026-11-11 (green on SQLite and Postgres 16). Supabase project creation was refused because of an overdue invoice in another Supabase org on the account; host choice pending.
+- **Status:** code and CI done 2026-11-11 (green on SQLite and Postgres 16). Host switched to Railway Postgres; waiting for a plan on the personal Railway workspace (trial expired).
 
 ### Phase 4: Sign-in and roles (handoff step 4)
 - Clerk token check reused from Idli's `services/api/app/auth.py`; allow-list from env.
@@ -77,7 +77,7 @@ Source: `HANDOFF.md` (steps 1 to 8), reordered so a deploy happens early and eve
 - **Done when:** tests cover the caps; dashboard shows real numbers after three calls on staging.
 
 ### Phase 8: Production hardening
-- `docs/deploy.md`: first deploy, rollback (tested once), key rotation, database restore (tested once from a Supabase backup).
+- `docs/deploy.md`: first deploy, rollback (tested once), key rotation, database restore (tested once from a Railway Postgres backup).
 - Dependency pinning, Docker image as non-root (already), basic load check of 10 concurrent calls.
 - **Done when:** rollback and restore have each been run once and written up.
 

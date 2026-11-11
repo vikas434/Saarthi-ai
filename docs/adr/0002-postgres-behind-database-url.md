@@ -12,7 +12,8 @@ Saarthi is moving to Railway. SQLite there needs a volume, ties the app to one i
 - Schema changes are Alembic migrations in `app/migrations/versions/`, numbered `0001_...`. The app upgrades to head the first time it opens a database; on Postgres the upgrade holds an advisory lock so two instances can't migrate at once. `python -m app.db upgrade` does the same by hand or as a Railway pre-deploy step. A SQLite file made by the prototype (tables, no version row) is stamped at 0001 instead of re-created.
 - Column types stay as they were (JSON and timestamps as text) so behaviour does not change in this step. Typed columns can follow in a later migration if queries need them.
 - Tests and evals never read the app's database: `tests/conftest.py`, `app/evals.py` and the browser smoke test set their own `DATABASE_URL` (a throwaway SQLite file, or `TEST_DATABASE_URL` when CI provides Postgres).
-- Production host: Supabase Postgres in ap-south-1, one project with a `staging` and a `production` schema, each reached by its own role whose `search_path` is fixed to that schema. If Supabase can't be used, Railway Postgres is the fallback; nothing in the code depends on Supabase.
+- Production host: Railway Postgres, one Postgres service in each Railway environment (`staging`, `production`), so the environments share nothing. The app gets `DATABASE_URL` as a reference to its own environment's Postgres over Railway's private network. Nothing in the code depends on the host.
+- `deploy/postgres-env-setup.sql` (one schema and one login role per environment) is kept for a host where environments must share one database.
 
 ## Alternatives
 - Plain `psycopg` plus hand-written SQLite branches: fewer dependencies, but two code paths to test.
@@ -22,4 +23,4 @@ Saarthi is moving to Railway. SQLite there needs a volume, ties the app to one i
 ## Consequences
 - New dependencies: `sqlalchemy`, `alembic`, `psycopg[binary]`.
 - Every schema change from now on is a migration and is tested on both databases in CI.
-- The Supabase project's API layer is not used; Saarthi tables live outside the `public` schema, which keeps them off the auto-generated REST API.
+- Supabase (first choice) could not be used: project creation was refused because of an overdue invoice in another organisation on the account. Railway Postgres also keeps the app and its database in one project and one bill, and never pauses for inactivity.
