@@ -45,7 +45,7 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
     port = _free_port()
     env = {
         **os.environ,
-        "SAARTHI_DB": str(tmp_path_factory.mktemp("db") / "smoke.db"),
+        "DATABASE_URL": f"sqlite:///{tmp_path_factory.mktemp('db') / 'smoke.db'}",
         "ANTHROPIC_API_KEY": "",
         "LLM_API_KEY": "",
         "LLM_BASE_URL": "",

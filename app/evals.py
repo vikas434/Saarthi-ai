@@ -4,7 +4,7 @@
 
 Plays two scripted agents through the real turn and report path and requires the strong one to
 score clearly higher, and the weak one's false promises to be marked down on accuracy when a
-model is configured. Uses a temporary database.
+model is configured. Uses its own database, never the app's.
 """
 
 from __future__ import annotations
@@ -62,7 +62,10 @@ def _check(results: list[tuple[str, bool]], name: str, ok: bool) -> None:
 
 
 def main() -> int:
-    os.environ["SAARTHI_DB"] = str(Path(tempfile.mkdtemp()) / "eval.db")
+    # Never the app's database: EVAL_DATABASE_URL (a throwaway Postgres in CI) or a temp SQLite file.
+    os.environ["DATABASE_URL"] = os.environ.get("EVAL_DATABASE_URL") or (
+        f"sqlite:///{Path(tempfile.mkdtemp()) / 'eval.db'}"
+    )
     strong, weak = run()
     results: list[tuple[str, bool]] = []
     print(f"scored by: {strong['scored_by']}")

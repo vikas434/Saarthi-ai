@@ -16,6 +16,8 @@ Open http://localhost:8100 in Chrome. Put your model key in `.env` (`ANTHROPIC_A
 
 With Docker: `docker compose up --build`.
 
+Storage is a local SQLite file by default. Set `DATABASE_URL` to use Postgres; the schema is migrated automatically on start, or by hand with `python -m app.db upgrade` (see [ADR 0002](docs/adr/0002-postgres-behind-database-url.md)).
+
 ## How a session works
 
 1. Pick a customer scenario. You see a short brief. The customer's real concerns stay hidden.

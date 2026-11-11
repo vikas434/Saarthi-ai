@@ -2,7 +2,11 @@ import os
 import tempfile
 from pathlib import Path
 
-os.environ["SAARTHI_DB"] = str(Path(tempfile.mkdtemp()) / "test.db")
+# Tests never touch the app's database: CI passes a throwaway Postgres as TEST_DATABASE_URL,
+# otherwise a temporary SQLite file is used.
+os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or (
+    f"sqlite:///{Path(tempfile.mkdtemp()) / 'test.db'}"
+)
 for key in ("ANTHROPIC_API_KEY", "LLM_API_KEY", "LLM_BASE_URL"):
     os.environ[key] = ""
 
