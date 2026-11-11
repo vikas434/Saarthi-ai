@@ -1,0 +1,18 @@
+# Secret and personal-data scan. Runs in the pre-commit hook and in CI.
+title = "saarthi"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "email-address"
+description = "Personal email address (keep emails in env vars only)"
+regex = '''[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}'''
+keywords = ["@"]
+
+[[rules.allowlists]]
+regexes = [
+  '''@users\.noreply\.github\.com''',
+  '''noreply@anthropic\.com''',
+  '''@example\.(com|org|test)''',
+]

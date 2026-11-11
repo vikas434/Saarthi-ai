@@ -44,6 +44,10 @@ Add your own in the Setup tab, or edit `config/markers.json`. Paste a checklist 
 - **Customers:** Setup drafts a scenario from one sentence. Built-in ones are in `config/scenarios.json`.
 - **Model:** `LLM_PROVIDER=anthropic`, or `openai_compatible` with `LLM_BASE_URL` for a company gateway.
 
+## Secrets and personal data
+
+Keys and emails live only in `.env` (git-ignored) and in Railway variables. A pre-commit hook in `.githooks/` runs [gitleaks](https://github.com/gitleaks/gitleaks) with `.gitleaks.toml`, which also blocks email addresses; CI scans the full history on every push. `run.sh` turns the hook on; to do it by hand: `git config core.hooksPath .githooks` (needs `brew install gitleaks`).
+
 ## Check it
 
 ```

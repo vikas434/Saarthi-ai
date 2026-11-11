@@ -2,6 +2,7 @@
 # One command to run Saarthi locally: http://localhost:8100
 set -e
 cd "$(dirname "$0")"
+git config core.hooksPath .githooks 2>/dev/null || true  # secret scan before each commit
 [ -d .venv ] || python3 -m venv .venv
 .venv/bin/pip -q install -e ".[dev]"
 [ -f .env ] || cp .env.example .env

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Block commits that contain secrets, keys, .env files or email addresses.
+set -euo pipefail
+if git diff --cached --name-only | grep -E '(^|/)\.env($|\.)' | grep -v '\.env\.example$'; then
+  echo "pre-commit: refusing to commit an .env file" >&2; exit 1
+fi
+if ! command -v gitleaks >/dev/null; then
+  echo "pre-commit: gitleaks not installed (brew install gitleaks)" >&2; exit 1
+fi
+gitleaks git --staged --no-banner --redact --config .gitleaks.toml
