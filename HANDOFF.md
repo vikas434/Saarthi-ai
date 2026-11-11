@@ -23,7 +23,7 @@ You are taking over Saarthi, a local prototype. Your job is to make it tested, p
 - A survey marker is answered by the customer persona in its own call, never by the coach.
 - Every marker kind must keep working in offline mode.
 - A stack or data-model change needs an ADR in `docs/adr/`.
-- Ask Vikas for everything you need from him (keys, Railway and GitHub access, sign-in choice) in one message, up front.
+- Ask Vikas for everything you need from him (keys, Railway and GitHub access) in one message, up front.
 - Show evidence for each step: command output or a screenshot.
 
 ## Steps, in order
@@ -46,12 +46,16 @@ You are taking over Saarthi, a local prototype. Your job is to make it tested, p
 - Tests and evals must use their own database, never the app's.
 - Done when: the same tests pass on SQLite and on Postgres in CI.
 
-### 4. Sign-in and roles
-- Roles: **agent** (own calls only), **manager** (all calls, team view), **admin** (markers, product facts, scenarios, users).
-- Verify OIDC JWTs in the API (issuer, audience, JWKS from env) so any identity provider works, including company SSO. For the hosted demo use one provider Vikas picks (Clerk, Auth0 or Google). Invite-only by email.
-- Every `/api` route checks the user and role. `sessions` gets a `user_id`; agents can only read their own. Setup routes (`PUT /api/product`, `POST/DELETE /api/markers`, `POST /api/scenarios`) are admin only.
-- Add a dev bypass that only works when an explicit env flag is set, for tests.
-- Done when: tests cover 401, 403, own-calls-only and admin-only routes.
+### 4. Sign-in and roles (decided by Vikas: Clerk, two emails only)
+- Use **Clerk**, the same Clerk application and keys as Idli AI (`vikas434/idli-ai`: see its `.env` for `CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY`, and `services/api/app/auth.py` for working token verification to reuse).
+- **Only the two emails already used in Idli AI may get in.** Read them from env, the same names Idli uses: `TEACHER_EMAIL` and `STUDENT_EMAILS`. Copy the values from Idli's `.env` into Saarthi's `.env` and Railway variables. Do not hardcode any email in the repo, tests or docs.
+- Role mapping: `TEACHER_EMAIL` is the **admin** (also sees every call, so it covers manager). `STUDENT_EMAILS` are **agents** (own calls only).
+- **Anyone else who signs in is not let in.** They see one page with exactly this message: "Your request is received. We will review and approve." Nothing else loads for them and every `/api` route returns 403 with that same message.
+- Record each such attempt once in an `access_requests` table (email, first seen, last seen, count) and list it for the admin in Setup. There is no approve button in this step: access changes only by editing the env allow-list.
+- Every `/api` route checks the user and role. `sessions` gets a `user_id`; agents can only read their own calls. Setup routes (`PUT /api/product`, `POST/DELETE /api/markers`, `POST /api/scenarios`) are admin only.
+- Add a dev bypass that only works when an explicit env flag is set, for tests. It must be off by default and refused when `RAILWAY_ENVIRONMENT` is set.
+- Add the Railway URL to Clerk's allowed origins and redirect URLs.
+- Done when: tests cover 401 (not signed in), 403 with the message (signed in, not on the list, and the request is recorded), own-calls-only, and admin-only routes; a screenshot shows the message page for an unlisted email.
 
 ### 5. Observability
 - OpenTelemetry traces: one trace per reply (`turn`: model call, parse, fallback) and per scorecard (`report`: coach call, survey call). Attributes: session id, scenario, model, prompt version, tokens in and out, latency, fallback used. Exporter by env: `none`, `console`, `otlp`.
@@ -77,7 +81,7 @@ You are taking over Saarthi, a local prototype. Your job is to make it tested, p
 Home by marker; scenarios tagged with target markers; Builder with transcript upload; replay-a-moment drills; manager dashboard; natural voice with interruptions (see the voice loop in `vikas434/idli-ai`); per-marker evals with labelled calls; simulated agents of different skill; flag a bad coach note into the eval set.
 
 ## Decisions to ask Vikas (once, at the start)
-1. Identity provider for the demo, and the email addresses for admin, manager and agents.
+1. (Decided) Sign-in is Clerk with the two Idli AI emails only; see step 4.
 2. Railway account access and the project name; GitHub account for the private repo.
 3. Daily spend cap and max calls per agent per day.
 4. The real SQS behaviours and weights, checklists and product facts, or permission to demo with the samples.
