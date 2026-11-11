@@ -18,6 +18,12 @@ With Docker: `docker compose up --build`.
 
 Storage is a local SQLite file by default. Set `DATABASE_URL` to use Postgres; the schema is migrated automatically on start, or by hand with `python -m app.db upgrade` (see [ADR 0002](docs/adr/0002-postgres-behind-database-url.md)).
 
+## Sign-in
+
+Saarthi uses Clerk (see [ADR 0003](docs/adr/0003-clerk-sign-in-and-roles.md)). Only `TEACHER_EMAIL` (admin) and `STUDENT_EMAILS` (agents) get in; anyone else sees a request-received message and is listed for the admin in Setup. Agents see only their own calls; the admin sees every call and edits Setup.
+
+For local work without Clerk, set `AUTH_DEV_BYPASS=1` and type an allow-listed email on the sign-in screen. The bypass is refused on a hosted server.
+
 ## How a session works
 
 1. Pick a customer scenario. You see a short brief. The customer's real concerns stay hidden.

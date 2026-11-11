@@ -7,8 +7,23 @@ from pathlib import Path
 os.environ["DATABASE_URL"] = os.environ.get("TEST_DATABASE_URL") or (
     f"sqlite:///{Path(tempfile.mkdtemp()) / 'test.db'}"
 )
-for key in ("ANTHROPIC_API_KEY", "LLM_API_KEY", "LLM_BASE_URL"):
+for key in (
+    "ANTHROPIC_API_KEY",
+    "LLM_API_KEY",
+    "LLM_BASE_URL",
+    "CLERK_SECRET_KEY",
+    "CLERK_PUBLISHABLE_KEY",
+    "RENDER",
+):
     os.environ[key] = ""
+os.environ.pop("RAILWAY_ENVIRONMENT", None)
+# Sign-in for tests: the dev bypass with example.com addresses only, never real ones.
+os.environ["AUTH_DEV_BYPASS"] = "1"
+os.environ["TEACHER_EMAIL"] = "admin@example.com"
+os.environ["STUDENT_EMAILS"] = "agent1@example.com, agent2@example.com"
+ADMIN = {"X-Dev-User": "admin@example.com"}
+AGENT1 = {"X-Dev-User": "agent1@example.com"}
+AGENT2 = {"X-Dev-User": "agent2@example.com"}
 
 import pytest
 from fastapi.testclient import TestClient
@@ -34,9 +49,25 @@ class FakeLLM:
 
 @pytest.fixture
 def client():
+    """Signed in as the admin, so existing route tests keep full access."""
     llm.set_llm_for_tests(None)
+    yield TestClient(app, headers=ADMIN)
+    llm.set_llm_for_tests(None)
+
+
+@pytest.fixture
+def agent1():
+    yield TestClient(app, headers=AGENT1)
+
+
+@pytest.fixture
+def agent2():
+    yield TestClient(app, headers=AGENT2)
+
+
+@pytest.fixture
+def anon():
     yield TestClient(app)
-    llm.set_llm_for_tests(None)
 
 
 @pytest.fixture

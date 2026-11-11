@@ -49,6 +49,11 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
         "ANTHROPIC_API_KEY": "",
         "LLM_API_KEY": "",
         "LLM_BASE_URL": "",
+        "CLERK_SECRET_KEY": "",
+        "CLERK_PUBLISHABLE_KEY": "",
+        "AUTH_DEV_BYPASS": "1",
+        "TEACHER_EMAIL": "admin@example.com",
+        "STUDENT_EMAILS": "agent@example.com",
     }
     proc = subprocess.Popen(
         [sys.executable, "-m", "uvicorn", "app.main:app", "--port", str(port)],
@@ -67,7 +72,9 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
 
 
 @pytest.fixture
-def page(base_url: str) -> Iterator[Page]:
+def page(base_url: str, request: pytest.FixtureRequest) -> Iterator[Page]:
+    marker = request.node.get_closest_marker("allow_console")
+    allowed = tuple(marker.args) if marker else ()
     with sync_playwright() as p:
         browser = p.chromium.launch()
         pg = browser.new_page()
@@ -75,9 +82,12 @@ def page(base_url: str) -> Iterator[Page]:
         pg.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
         pg.on("pageerror", lambda e: errors.append(str(e)))
         pg.goto(base_url)
+        pg.evaluate("localStorage.clear()")
+        pg.reload()
         yield pg
         browser.close()
-        assert not errors, f"console errors: {errors}"
+        unexpected = [e for e in errors if not any(a in e for a in allowed)]
+        assert not unexpected, f"console errors: {unexpected}"
 
 
 def _say(page: Page, text: str, replies_before: int) -> None:
@@ -86,7 +96,29 @@ def _say(page: Page, text: str, replies_before: int) -> None:
     expect(page.locator("#chat .msg.customer")).to_have_count(replies_before + 1)
 
 
+def _sign_in(page: Page, email: str) -> None:
+    page.fill("#dev-email", email)
+    page.click("#dev-sign-in")
+
+
+@pytest.mark.allow_console("status of 403 (Forbidden)")  # the expected refusal itself
+def test_unlisted_email_sees_only_the_request_received_message(page: Page) -> None:
+    _sign_in(page, "stranger@example.com")
+    expect(page.locator("#gate")).to_have_text(
+        "Your request is received. We will review and approve."
+    )
+    expect(page.locator("header")).to_be_hidden()
+    expect(page.locator("main")).to_be_hidden()
+
+
+def test_agent_does_not_see_setup(page: Page) -> None:
+    _sign_in(page, "agent@example.com")
+    expect(page.locator("#who")).to_contain_text("agent@example.com · agent")
+    expect(page.locator('nav button[data-tab="setup"]')).to_be_hidden()
+
+
 def test_offline_call_reaches_the_scorecard_and_tabs_open(page: Page) -> None:
+    _sign_in(page, "admin@example.com")
     expect(page.locator("#mode")).to_contain_text("Offline demo mode")
     page.fill("#agent", "Smoke test")
     page.locator("#scenarios button", has_text="Start call").first.click()
@@ -108,3 +140,4 @@ def test_offline_call_reaches_the_scorecard_and_tabs_open(page: Page) -> None:
     expect(page.locator("#tab-setup")).to_be_visible()
     expect(page.locator("#markers tr", has_text="SQS")).to_be_visible()
     expect(page.locator("#product")).not_to_be_empty()
+    expect(page.locator("#access-requests")).to_contain_text("stranger@example.com")

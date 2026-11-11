@@ -535,9 +535,9 @@ def draft_scenario(description: str) -> dict:
     return scenario
 
 
-def progress() -> dict:
-    """Trend per marker and average per behaviour across scored calls."""
-    reports = store.scored_reports()
+def progress(user_id: str | None = None) -> dict:
+    """Trend per marker and average per behaviour across scored calls (one user's, or all)."""
+    reports = store.scored_reports(user_id)
     markers = load_markers()
     trends: dict[str, list] = {m["id"]: [] for m in markers}
     per: dict[str, list[int]] = {}

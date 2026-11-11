@@ -14,5 +14,5 @@ keywords = ["@"]
 regexes = [
   '''@users\.noreply\.github\.com''',
   '''noreply@anthropic\.com''',
-  '''@example\.(com|org|test)''',
+  '''(?i)@([a-z0-9-]+\.)*example\.(com|org|test)''',
 ]

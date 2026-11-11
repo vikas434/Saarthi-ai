@@ -11,6 +11,7 @@ dependencies = [
   "sqlalchemy>=2.0.36",
   "alembic>=1.14.0",
   "psycopg[binary]>=3.2.3",
+  "pyjwt[crypto]>=2.10.0",
 ]
 
 [project.optional-dependencies]
@@ -29,6 +30,7 @@ include = ["app*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["allow_console(*texts): browser console errors this e2e test expects"]
 
 [tool.ruff]
 line-length = 100

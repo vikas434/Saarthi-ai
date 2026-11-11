@@ -13,6 +13,7 @@ from sqlalchemy import Connection, text
 from app.db import engine
 
 SESSION_LIST_LIMIT = 200
+ACCESS_REQUEST_DEBOUNCE_SECONDS = 60  # one page load makes several calls; count it once
 
 
 @contextmanager
@@ -26,13 +27,15 @@ def now() -> str:
     return datetime.now(UTC).isoformat(timespec="seconds")
 
 
-def create_session(scenario_id: str, agent_name: str, opening: str, mode: str) -> str:
+def create_session(
+    scenario_id: str, agent_name: str, opening: str, mode: str, user_id: str | None = None
+) -> str:
     sid = uuid.uuid4().hex[:12]
     with _tx() as conn:
         conn.execute(
             text(
-                "INSERT INTO sessions (id, scenario_id, agent_name, started_at, mode) "
-                "VALUES (:id, :scenario_id, :agent_name, :started_at, :mode)"
+                "INSERT INTO sessions (id, scenario_id, agent_name, started_at, mode, user_id) "
+                "VALUES (:id, :scenario_id, :agent_name, :started_at, :mode, :user_id)"
             ),
             {
                 "id": sid,
@@ -40,6 +43,7 @@ def create_session(scenario_id: str, agent_name: str, opening: str, mode: str) -
                 "agent_name": agent_name,
                 "started_at": now(),
                 "mode": mode,
+                "user_id": user_id,
             },
         )
         conn.execute(
@@ -109,24 +113,60 @@ def save_report(sid: str, report: dict) -> None:
         )
 
 
-def list_sessions() -> list[dict]:
+def list_sessions(user_id: str | None = None) -> list[dict]:
+    """Newest first. With user_id, only that user's calls; without, everyone's (admin)."""
+    owner = "" if user_id is None else "WHERE user_id = :user_id "
     with _tx() as conn:
         rows = conn.execute(
             text(
                 "SELECT id, scenario_id, agent_name, started_at, ended_at, score, mode "
-                "FROM sessions ORDER BY started_at DESC LIMIT :limit"
+                f"FROM sessions {owner}ORDER BY started_at DESC LIMIT :limit"
             ),
-            {"limit": SESSION_LIST_LIMIT},
+            {"limit": SESSION_LIST_LIMIT, "user_id": user_id},
         ).mappings()
         return [dict(r) for r in rows]
 
 
-def scored_reports() -> list[dict]:
+def scored_reports(user_id: str | None = None) -> list[dict]:
+    owner = "" if user_id is None else "AND user_id = :user_id "
     with _tx() as conn:
         rows = conn.execute(
-            text("SELECT report FROM sessions WHERE report IS NOT NULL ORDER BY started_at")
+            text(
+                f"SELECT report FROM sessions WHERE report IS NOT NULL {owner}ORDER BY started_at"
+            ),
+            {"user_id": user_id},
         ).scalars()
         return [json.loads(r) for r in rows]
+
+
+def record_access_request(email: str) -> None:
+    """Remember a sign-in from outside the allow-list: one row per email, counted."""
+    stamp = now()
+    cutoff = datetime.fromtimestamp(
+        datetime.now(UTC).timestamp() - ACCESS_REQUEST_DEBOUNCE_SECONDS, UTC
+    ).isoformat(timespec="seconds")
+    with _tx() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO access_requests (email, first_seen, last_seen, count) "
+                "VALUES (:email, :stamp, :stamp, 1) "
+                "ON CONFLICT (email) DO UPDATE SET last_seen = excluded.last_seen, "
+                "count = access_requests.count + "
+                "CASE WHEN access_requests.last_seen < :cutoff THEN 1 ELSE 0 END"
+            ),
+            {"email": email.strip().lower(), "stamp": stamp, "cutoff": cutoff},
+        )
+
+
+def list_access_requests() -> list[dict]:
+    with _tx() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT email, first_seen, last_seen, count FROM access_requests "
+                "ORDER BY last_seen DESC"
+            )
+        ).mappings()
+        return [dict(r) for r in rows]
 
 
 def custom_scenarios() -> list[dict]:

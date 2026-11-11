@@ -1,22 +1,24 @@
-"""Saarthi API and the single-page app."""
+"""Saarthi API and the single-page app. Every /api route except /api/auth/config needs sign-in."""
 
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from app import coach, store
+from app import auth, coach, store
+from app.auth import AuthError, Principal
 
-app = FastAPI(title="Saarthi", version="0.1.0")
+app = FastAPI(title="Saarthi", version="0.2.0")
 STATIC = Path(__file__).parent / "static"
 
 
 class StartIn(BaseModel):
     scenario_id: str
-    agent_name: str = Field(default="Agent", max_length=80)
+    agent_name: str = Field(default="", max_length=80)
 
 
 class TurnIn(BaseModel):
@@ -40,6 +42,29 @@ class ScenarioIn(BaseModel):
     description: str = Field(min_length=5, max_length=500)
 
 
+@app.exception_handler(AuthError)
+def _auth_error(_: Request, exc: AuthError) -> JSONResponse:
+    headers = {"WWW-Authenticate": "Bearer"} if exc.status == 401 else None
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status, headers=headers)
+
+
+def current_user(
+    authorization: Annotated[str | None, Header()] = None,
+    x_dev_user: Annotated[str | None, Header()] = None,
+) -> Principal:
+    return auth.authenticate(authorization, x_dev_user)
+
+
+def admin_user(user: Annotated[Principal, Depends(current_user)]) -> Principal:
+    if user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only the admin can change Setup.")
+    return user
+
+
+User = Annotated[Principal, Depends(current_user)]
+Admin = Annotated[Principal, Depends(admin_user)]
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
@@ -50,10 +75,22 @@ def index() -> FileResponse:
     return FileResponse(STATIC / "index.html")
 
 
+@app.get("/api/auth/config")
+def auth_config() -> dict:
+    """Public: how the page should sign people in. No secrets."""
+    return auth.public_config()
+
+
+@app.get("/api/me")
+def me(user: User) -> dict:
+    return {"email": user.email, "role": user.role}
+
+
 @app.get("/api/config")
-def config() -> dict:
+def config(user: User) -> dict:
     return {
         "mode": coach.mode(),
+        "role": user.role,
         "rubric": coach.load_rubric(),
         "markers": coach.load_markers(),
         "scenarios": [coach.public_scenario(s) for s in coach.load_scenarios()],
@@ -62,20 +99,20 @@ def config() -> dict:
 
 
 @app.put("/api/product")
-def set_product(body: ProductIn) -> dict:
+def set_product(body: ProductIn, _: Admin) -> dict:
     store.set_kv("product", body.text)
     return {"saved": True}
 
 
 @app.post("/api/scenarios")
-def add_scenario(body: ScenarioIn) -> dict:
+def add_scenario(body: ScenarioIn, _: Admin) -> dict:
     scenario = coach.draft_scenario(body.description)
     store.save_scenario(scenario)
     return coach.public_scenario(scenario)
 
 
 @app.post("/api/markers")
-def add_marker(body: MarkerIn) -> dict:
+def add_marker(body: MarkerIn, _: Admin) -> dict:
     """Add a rubric, survey or checklist marker. It is scored on every call from then on."""
     try:
         return coach.add_marker(
@@ -86,26 +123,39 @@ def add_marker(body: MarkerIn) -> dict:
 
 
 @app.delete("/api/markers/{marker_id}")
-def delete_marker(marker_id: str) -> dict:
+def delete_marker(marker_id: str, _: Admin) -> dict:
     if not coach.remove_marker(marker_id):
         raise HTTPException(status_code=404, detail="Only markers added in Setup can be removed")
     return {"removed": True}
 
 
-def _session_or_404(sid: str) -> dict:
+@app.get("/api/access-requests")
+def access_requests(_: Admin) -> list[dict]:
+    """Sign-ins from emails outside the allow-list. Access changes only through env."""
+    return store.list_access_requests()
+
+
+def _owner_filter(user: Principal) -> str | None:
+    """None means every call (admin); otherwise only the caller's own."""
+    return None if user.role == "admin" else user.user_id
+
+
+def _session_or_404(sid: str, user: Principal) -> dict:
     session = store.get_session(sid)
-    if session is None:
+    owner = _owner_filter(user)
+    if session is None or (owner is not None and session.get("user_id") != owner):
         raise HTTPException(status_code=404, detail="Session not found")
     return session
 
 
 @app.post("/api/sessions")
-def start(body: StartIn) -> dict:
+def start(body: StartIn, user: User) -> dict:
     scenario = coach.get_scenario(body.scenario_id)
     if scenario is None:
         raise HTTPException(status_code=404, detail="Scenario not found")
+    name = body.agent_name.strip() or user.email.split("@", 1)[0]
     sid = store.create_session(
-        scenario["id"], body.agent_name.strip() or "Agent", scenario["opening_line"], coach.mode()
+        scenario["id"], name, scenario["opening_line"], coach.mode(), user_id=user.user_id
     )
     return {
         "id": sid,
@@ -115,8 +165,8 @@ def start(body: StartIn) -> dict:
 
 
 @app.post("/api/sessions/{sid}/turns")
-def turn(sid: str, body: TurnIn) -> dict:
-    session = _session_or_404(sid)
+def turn(sid: str, body: TurnIn, user: User) -> dict:
+    session = _session_or_404(sid, user)
     if session["report"] is not None or session["done"]:
         raise HTTPException(status_code=409, detail="This call has ended. Get the scorecard.")
     result = coach.next_turn(session, body.text.strip())
@@ -125,30 +175,30 @@ def turn(sid: str, body: TurnIn) -> dict:
 
 
 @app.post("/api/sessions/{sid}/end")
-def end(sid: str) -> dict:
-    session = _session_or_404(sid)
+def end(sid: str, user: User) -> dict:
+    session = _session_or_404(sid, user)
     if session["report"] is None:
         if not any(t["agent_text"] for t in session["turns"]):
             raise HTTPException(status_code=400, detail="Say something to the customer first.")
         store.save_report(sid, coach.build_report(session))
-        session = _session_or_404(sid)
+        session = _session_or_404(sid, user)
     return session
 
 
 @app.get("/api/sessions")
-def sessions() -> list[dict]:
+def sessions(user: User) -> list[dict]:
     titles = {s["id"]: s["title"] for s in coach.load_scenarios()}
     return [
         {**s, "scenario_title": titles.get(s["scenario_id"], s["scenario_id"])}
-        for s in store.list_sessions()
+        for s in store.list_sessions(_owner_filter(user))
     ]
 
 
 @app.get("/api/sessions/{sid}")
-def session(sid: str) -> dict:
-    return _session_or_404(sid)
+def session(sid: str, user: User) -> dict:
+    return _session_or_404(sid, user)
 
 
 @app.get("/api/progress")
-def progress() -> dict:
-    return coach.progress()
+def progress(user: User) -> dict:
+    return coach.progress(_owner_filter(user))
