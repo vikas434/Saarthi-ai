@@ -46,6 +46,7 @@ Source: `HANDOFF.md` (steps 1 to 8), reordered so a deploy happens early and eve
 - CI runs the suite on SQLite and on a Postgres service container.
 - Create Supabase project, schemas, roles. Connection strings go to Railway only.
 - **Done when:** same tests pass on both databases in CI.
+- **Status:** code and CI done 2026-11-11 (green on SQLite and Postgres 16). Supabase project creation was refused because of an overdue invoice in another Supabase org on the account; host choice pending.
 
 ### Phase 4: Sign-in and roles (handoff step 4)
 - Clerk token check reused from Idli's `services/api/app/auth.py`; allow-list from env.
