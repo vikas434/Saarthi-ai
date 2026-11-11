@@ -1,0 +1,86 @@
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  checks:
+    name: lint, tests, offline evals
+    runs-on: ubuntu-latest
+    env:
+      # Tests and offline evals must never use a model key.
+      ANTHROPIC_API_KEY: ""
+      LLM_API_KEY: ""
+      LLM_BASE_URL: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e ".[dev]"
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest -q
+      - name: Offline evals
+        run: python -m app.evals
+
+  e2e:
+    name: browser smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - run: pip install -e ".[dev,e2e]"
+      - run: playwright install --with-deps chromium
+      - run: pytest e2e -q
+
+  docker:
+    name: docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t saarthi:ci .
+      - name: Image starts and is healthy
+        run: |
+          docker run -d --name saarthi -p 8100:8100 saarthi:ci
+          for i in $(seq 1 20); do curl -fs localhost:8100/health && exit 0; sleep 1; done
+          docker logs saarthi; exit 1
+
+  model-evals:
+    name: evals with the real model
+    # Costs a few cents per run, so only on main and on demand. Skipped when no key is set.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: checks
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      LLM_MODEL: claude-haiku-5-5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - if: env.ANTHROPIC_API_KEY != ''
+        run: pip install -e ".[dev]"
+      - if: env.ANTHROPIC_API_KEY != ''
+        name: Evals with the real model
+        run: python -m app.evals
+      - if: env.ANTHROPIC_API_KEY == ''
+        run: echo "ANTHROPIC_API_KEY secret not set; skipping model evals."

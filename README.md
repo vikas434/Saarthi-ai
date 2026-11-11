@@ -54,6 +54,9 @@ Keys and emails live only in `.env` (git-ignored) and in Railway variables. A pr
 .venv/bin/pytest -q             # no key needed
 .venv/bin/python -m app.evals   # a strong agent must beat a weak one on every marker;
                                 # with a key, any fallback reply or score fails it
+.venv/bin/pytest e2e -q         # browser smoke test (pip install -e ".[e2e]"; playwright install chromium)
 ```
+
+CI (`.github/workflows/ci.yml`) runs all of these plus `ruff`, a Docker build and a secret scan on every push. Evals with the real model run on `main` when the `ANTHROPIC_API_KEY` repo secret is set.
 
 See [docs/design.md](docs/design.md) for the full product design and [docs/plan.md](docs/plan.md) for the build order.

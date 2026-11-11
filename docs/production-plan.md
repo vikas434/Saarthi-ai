@@ -35,7 +35,7 @@ Source: `HANDOFF.md` (steps 1 to 8), reordered so a deploy happens early and eve
 - **Done when:** evals pass with a key 3 runs in a row; screenshots in `docs/screenshots/`.
 - **Found:** thinking on Haiku 5.5 ate the 500-token reply budget (every reply fell back silently, and the eval still said PASS); fixed with schemas, larger budgets and a fallback-aware eval. Scorecard takes 15 to 18 s; revisit in Phase 7.
 
-### Phase 2: CI (handoff step 2)
+### Phase 2: CI (handoff step 2) (done 2026-11-11)
 - GitHub Actions: ruff, format check, pytest, offline evals, docker build, gitleaks. Second eval job with the key from repo secrets when set.
 - Playwright smoke test: load page, offline call to scorecard, open History and Setup, fail on console errors.
 - **Done when:** CI green on `main`.
