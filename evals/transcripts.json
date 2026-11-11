@@ -1,0 +1,17 @@
+{
+  "about": "A strong and a weak agent on the same scenario. The scorecard must rank the strong one clearly higher. Run: python -m app.evals",
+  "scenario_id": "price-worried-owner",
+  "strong": [
+    "Hi Meera, thanks for taking my call. I'm calling about LedgerLeaf. Before I say anything about it, how do you keep your books today?",
+    "So you spend every Sunday evening in Excel and your accountant still found the records messy. That sounds tiring. What bothers you most about it?",
+    "I understand, price matters for a small shop. Starter is Rs 999 a month and Growth is Rs 2,499. With 4 staff you may not need Growth yet. Would payroll be useful to you?",
+    "That makes sense, you were stuck in a subscription before. Here you can cancel any time, billing is monthly, and there is a 30-day free trial with no card.",
+    "Moving from Excel is included and takes about 2 working days. Shall I set up the free trial so you can see your own data before deciding?"
+  ],
+  "weak": [
+    "LedgerLeaf is the best accounting software with bank feeds, invoicing, payroll, inventory and GST reports.",
+    "It is only Rs 2,499 and it will guarantee you save tax. You must sign up today.",
+    "Everyone uses it. The data import happens the same day. Just give me your card details right now.",
+    "As I said it has many features. This offer is today only, last chance."
+  ]
+}

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "price-worried-owner",
+    "title": "Price-worried shop owner",
+    "difficulty": "Medium",
+    "public_brief": "Inbound call. Meera runs a small boutique and asked for a callback about LedgerLeaf. She keeps her books in Excel.",
+    "customer": {
+      "name": "Meera",
+      "persona": "Owner of a clothing boutique with 4 staff. Practical, busy, polite but guarded about money.",
+      "mood": "Curious but cautious",
+      "situation": "Spends every Sunday evening on Excel. Her accountant complained about messy records last quarter.",
+      "hidden_objections": ["Thinks Rs 2,499 a month is too much", "Afraid moving data from Excel will be painful", "Was burned by a software subscription she could not cancel"],
+      "wins_if": "The agent asks about her business first, links the product to her Sunday evenings and her accountant, and is honest about price and cancellation.",
+      "walks_away_if": "The agent pitches features without asking anything, or pushes her to pay today."
+    },
+    "opening_line": "Hi, yes, this is Meera. You people called about some accounting software?"
+  },
+  {
+    "id": "angry-existing-customer",
+    "title": "Upset customer, upsell chance",
+    "difficulty": "Hard",
+    "public_brief": "Rahul is on the Starter plan and called in annoyed. His bank feed missed cash sales. There may be a fit for Expert Assist.",
+    "customer": {
+      "name": "Rahul",
+      "persona": "Runs a cafe. Direct, impatient, feels he was oversold.",
+      "mood": "Frustrated",
+      "situation": "His reports looked wrong because cash sales were never entered. He thinks the product is broken.",
+      "hidden_objections": ["Believes the salesperson promised everything was automatic", "Does not want to pay more to fix a problem he thinks is the product's fault", "Has no time to learn bookkeeping"],
+      "wins_if": "The agent lets him vent, acknowledges the frustration, explains cash entries honestly, and only then offers Expert Assist as an option.",
+      "walks_away_if": "The agent gets defensive, blames him, or pitches the add-on before acknowledging the problem."
+    },
+    "opening_line": "Look, I've been paying for this for three months and my numbers are wrong. What exactly am I paying for?"
+  },
+  {
+    "id": "comparison-shopper",
+    "title": "Comparison shopper",
+    "difficulty": "Easy",
+    "public_brief": "Ananya is a freelance designer comparing two bookkeeping tools. She booked a 10-minute demo call.",
+    "customer": {
+      "name": "Ananya",
+      "persona": "Freelance designer, organised, asks precise questions, values honesty.",
+      "mood": "Friendly and analytical",
+      "situation": "Sends about 15 invoices a month and wants GST reports without hiring an accountant full time.",
+      "hidden_objections": ["Wonders if Starter is enough or she is being upsold", "Wants to know if LedgerLeaf files her taxes", "Needs to be sure she can leave with her data"],
+      "wins_if": "The agent recommends the smallest plan that fits, is clear that LedgerLeaf does not file taxes, and offers the free trial.",
+      "walks_away_if": "The agent claims the product files taxes or pushes the bigger plan without reason."
+    },
+    "opening_line": "Hi! Thanks for making time. I'm comparing a couple of tools, so I have a few specific questions."
+  }
+]

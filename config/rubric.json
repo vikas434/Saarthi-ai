@@ -1,0 +1,15 @@
+{
+  "name": "SQS",
+  "about": "Sales Quality Score: behaviours scored 1 to 5 from the conversation. Edit names, descriptions and weights to match your own SQS. A behaviour the conversation gave no chance to show is left unscored.",
+  "behaviors": [
+    {"id": "opening", "name": "Opening and rapport", "weight": 1, "description": "Greets warmly, uses the customer's name, sets a clear purpose for the call."},
+    {"id": "discovery", "name": "Discovery", "weight": 2, "description": "Asks open questions to learn the customer's situation and needs before pitching."},
+    {"id": "listening", "name": "Active listening", "weight": 2, "description": "Reflects back what the customer said and builds on it; does not repeat questions already answered."},
+    {"id": "empathy", "name": "Empathy", "weight": 1.5, "description": "Acknowledges feelings and concerns before moving to a solution."},
+    {"id": "accuracy", "name": "Product accuracy and honesty", "weight": 2, "description": "States only what the product facts support. No invented features, prices or promises."},
+    {"id": "value", "name": "Value framing", "weight": 1.5, "description": "Links product benefits to this customer's stated needs, not a generic feature list."},
+    {"id": "objections", "name": "Objection handling", "weight": 2, "description": "Acknowledges the objection, explores it, answers with facts, checks it is resolved."},
+    {"id": "next_step", "name": "Clear next step", "weight": 1.5, "description": "Ends with a specific, agreed next step without pressure."},
+    {"id": "clarity", "name": "Clarity and brevity", "weight": 1, "description": "Short, plain sentences. No jargon, no rambling."}
+  ]
+}

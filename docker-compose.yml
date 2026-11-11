@@ -1,0 +1,13 @@
+# docker compose up --build  ->  http://localhost:8100
+services:
+  sqs-coach:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "8100:8100"
+    volumes:
+      - sqs_data:/srv/data
+volumes:
+  sqs_data:
