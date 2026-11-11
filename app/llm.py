@@ -13,10 +13,22 @@ from app.config import env
 logger = logging.getLogger(__name__)
 
 
+class ModelReplyError(RuntimeError):
+    """The model answered, but not with a complete reply we can use."""
+
+
 class LLM(Protocol):
     name: str
 
-    def complete(self, *, system: str, user: str, max_tokens: int) -> str: ...
+    def complete(
+        self,
+        *,
+        system: str,
+        user: str,
+        max_tokens: int,
+        schema: dict | None = None,
+        effort: str | None = None,
+    ) -> str: ...
 
 
 class AnthropicLLM:
@@ -27,13 +39,28 @@ class AnthropicLLM:
         self._model = model
         self._client = Anthropic(api_key=api_key, base_url=base_url or None)
 
-    def complete(self, *, system: str, user: str, max_tokens: int) -> str:
+    def complete(
+        self,
+        *,
+        system: str,
+        user: str,
+        max_tokens: int,
+        schema: dict | None = None,
+        effort: str | None = None,
+    ) -> str:
+        """One call. Thinking stays on (low effort unless raised); a schema makes valid JSON."""
+        output_config: dict = {"effort": effort or env("LLM_EFFORT", "low")}
+        if schema is not None:
+            output_config["format"] = {"type": "json_schema", "schema": schema}
         msg = self._client.messages.create(
             model=self._model,
             max_tokens=max_tokens,
             system=system,
             messages=[{"role": "user", "content": user}],
+            output_config=output_config,
         )
+        if msg.stop_reason in ("max_tokens", "refusal"):
+            raise ModelReplyError(f"model stopped early: {msg.stop_reason}")
         return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
 
 
@@ -44,7 +71,16 @@ class OpenAICompatibleLLM:
         self._url = base_url.rstrip("/") + "/chat/completions"
         self._headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
 
-    def complete(self, *, system: str, user: str, max_tokens: int) -> str:
+    def complete(
+        self,
+        *,
+        system: str,
+        user: str,
+        max_tokens: int,
+        schema: dict | None = None,
+        effort: str | None = None,
+    ) -> str:
+        """Gateways differ in JSON-schema support, so the schema is not sent; parsing checks it."""
         resp = httpx.post(
             self._url,
             headers=self._headers,
@@ -75,7 +111,7 @@ def get_llm() -> LLM | None:
     if _override is not None:
         return _override
     provider = env("LLM_PROVIDER", "anthropic")
-    model = env("LLM_MODEL", "claude-haiku-4-5-20251001")
+    model = env("LLM_MODEL", "claude-haiku-5-5")
     if provider == "openai_compatible":
         if not env("LLM_BASE_URL"):
             return None

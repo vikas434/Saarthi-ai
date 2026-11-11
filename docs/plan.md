@@ -17,8 +17,10 @@ Coach agents on any quality marker (SQS, tNPS, ProSat, checklists) through reali
 - tNPS and ProSat answered by the customer in character, shown with their driver behaviours.
 - Scorecard, history and the eval are per marker.
 
-## Not yet verified
-- The model path has only been tested with a scripted fake. Run one call and `python -m app.evals` with a real key before a demo.
+## Verified with a real model (2026-11-11)
+- `claude-haiku-5-5`: one call per scenario in the browser and `python -m app.evals` passing three runs in a row. Screenshots: `docs/screenshots/real-call.jpg`, `docs/screenshots/real-scorecard.jpg`.
+- Structured outputs on every call, one retry on an unusable reply, and a visible "backup" label when the offline fallback answered. See the update in ADR 0001.
+- Known limit: the eval's agents are scripted, so their lines cannot react to the live customer. The strong lines assume nothing the customer has not been asked.
 
 ## Next
 1. Replace the sample rubric and product facts with the real SQS and product.

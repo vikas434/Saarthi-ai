@@ -7,12 +7,18 @@ import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
 
-from app import offline, store
+from app import offline, schemas, store
 from app.config import CONFIG_DIR, MAX_AGENT_TURNS
-from app.llm import get_llm, parse_json
+from app.llm import LLM, ModelReplyError, get_llm, parse_json
 
 logger = logging.getLogger(__name__)
-PROMPT_VERSION = "saarthi@2"
+PROMPT_VERSION = "saarthi@3"
+PARSE_ATTEMPTS = 2  # one retry when the model's reply can't be used
+TURN_MAX_TOKENS = 4000  # thinking and the JSON reply share this budget
+REPORT_MAX_TOKENS = 12000
+SURVEY_MAX_TOKENS = 3000
+SCENARIO_MAX_TOKENS = 3000
+REPORT_EFFORT = "medium"  # judging a whole call needs more care than one customer line
 MARKER_TYPES = ("rubric", "survey", "checklist")
 
 
@@ -174,6 +180,30 @@ Reply with exactly this JSON shape:
             "try_instead": "one sentence the agent could have said, or empty when verdict is good"}}}}"""
 
 
+def _ask(
+    llm: LLM,
+    *,
+    system: str,
+    user: str,
+    max_tokens: int,
+    schema: dict,
+    effort: str | None = None,
+) -> dict:
+    """Call the model and parse its JSON, retrying once if the reply is unusable."""
+    last: Exception | None = None
+    for attempt in range(1, PARSE_ATTEMPTS + 1):
+        try:
+            return parse_json(
+                llm.complete(
+                    system=system, user=user, max_tokens=max_tokens, schema=schema, effort=effort
+                )
+            )
+        except (ValueError, ModelReplyError) as exc:
+            last = exc
+            logger.warning("unusable model reply (attempt %d/%d): %s", attempt, PARSE_ATTEMPTS, exc)
+    raise ModelReplyError(f"no usable reply after {PARSE_ATTEMPTS} attempts") from last
+
+
 def _clean_coach(coach: dict, rubric: dict) -> dict:
     ids = {b["id"] for b in rubric["behaviors"]}
     verdict = str(coach.get("verdict", "mixed")).lower()
@@ -203,10 +233,12 @@ def next_turn(session: dict, agent_text: str) -> dict:
             f"Agent's latest message:\n{agent_text}\n\nJSON:"
         )
         try:
-            data = parse_json(
-                llm.complete(
-                    system=_turn_system(scenario, rubric, load_product()), user=user, max_tokens=500
-                )
+            data = _ask(
+                llm,
+                system=_turn_system(scenario, rubric, load_product()),
+                user=user,
+                max_tokens=TURN_MAX_TOKENS,
+                schema=schemas.turn_schema([b["id"] for b in rubric["behaviors"]]),
             )
             result = {
                 "customer": str(data["customer"]).strip(),
@@ -215,12 +247,16 @@ def next_turn(session: dict, agent_text: str) -> dict:
             }
         except Exception as exc:  # noqa: BLE001
             logger.warning("turn model call failed, using offline reply: %s", exc)
+    fallback = llm is not None and result is None
     if result is None:
         result = offline.turn(scenario, agent_turns)
-        result["coach"] = _clean_coach(result["coach"], rubric)
-    if len(agent_turns) >= MAX_AGENT_TURNS:
-        result["done"] = True
-    return result
+        result = {**result, "coach": _clean_coach(result["coach"], rubric)}
+    return {
+        **result,
+        "done": result["done"] or len(agent_turns) >= MAX_AGENT_TURNS,
+        "fallback": fallback,
+        "coach": {**result["coach"], "fallback": fallback},
+    }
 
 
 def _checklist_items(markers: list[dict]) -> list[dict]:
@@ -240,6 +276,9 @@ Behaviours (score each 1 to 5; use null when the call gave no chance to show it)
 {_rubric_lines({"behaviors": behaviors})}
 1 = harmful or absent when clearly needed, 3 = adequate, 5 = excellent and consistent.
 Score what the agent did, not how the customer reacted. Be specific and fair: quote the agent.
+Accuracy rule: if the agent made any claim or promise the product facts do not support, or
+anything the facts say never to promise, score accuracy 1 (or 2 if the agent corrected it
+clearly during the call). The checklist item about promises is then "no".
 
 Checklist items (answer "yes", "no", or "na" when the call gave no occasion for it):
 {checklist}
@@ -298,12 +337,15 @@ def _weighted_percent(behaviors: list[dict]) -> float | None:
 def _coach_data(llm, session, scenario, behaviors, items, agent_turns) -> tuple[dict, str]:
     if llm is not None:
         try:
-            data = parse_json(
-                llm.complete(
-                    system=_report_system(behaviors, items, load_product(), scenario),
-                    user=f"Transcript:\n{_transcript(session['turns'])}\n\nJSON:",
-                    max_tokens=3000,
-                )
+            data = _ask(
+                llm,
+                system=_report_system(behaviors, items, load_product(), scenario),
+                user=f"Transcript:\n{_transcript(session['turns'])}\n\nJSON:",
+                max_tokens=REPORT_MAX_TOKENS,
+                effort=REPORT_EFFORT,
+                schema=schemas.report_schema(
+                    [b["id"] for b in behaviors], [i["key"] for i in items]
+                ),
             )
             return data, llm.name
         except Exception as exc:  # noqa: BLE001
@@ -316,12 +358,12 @@ def _survey_data(llm, session, scenario, surveys, agent_turns) -> tuple[list[dic
         return [], "none"
     if llm is not None:
         try:
-            data = parse_json(
-                llm.complete(
-                    system=_survey_system(scenario, surveys),
-                    user=f"The call:\n{_transcript(session['turns'])}\n\nJSON:",
-                    max_tokens=500,
-                )
+            data = _ask(
+                llm,
+                system=_survey_system(scenario, surveys),
+                user=f"The call:\n{_transcript(session['turns'])}\n\nJSON:",
+                max_tokens=SURVEY_MAX_TOKENS,
+                schema=schemas.survey_schema([m["id"] for m in surveys]),
             )
             return list(data.get("answers", [])), llm.name
         except Exception as exc:  # noqa: BLE001
@@ -439,6 +481,7 @@ def build_report(session: dict) -> dict:
         "summary": str(data.get("summary", "")),
         "next_drill": str(data.get("next_drill", "")),
         "scored_by": source,
+        "fallback": llm is not None and "offline" in (source, survey_source),
         "prompt_version": PROMPT_VERSION,
         "agent_turns": len(agent_turns),
     }
@@ -469,18 +512,18 @@ def draft_scenario(description: str) -> dict:
     llm = get_llm()
     if llm is not None:
         try:
-            data = parse_json(
-                llm.complete(
-                    system=(
-                        "Draft a sales practice scenario as JSON only, with keys: title, difficulty "
-                        "(Easy|Medium|Hard), public_brief (what the agent is told, 1-2 sentences), "
-                        "customer {name, persona, mood, situation, hidden_objections (3 strings), "
-                        "wins_if, walks_away_if}, opening_line (the customer's first words). "
-                        f"Base it on the product facts.\n\nProduct facts:\n{load_product()}"
-                    ),
-                    user=f"Customer to practise with: {description}\n\nJSON:",
-                    max_tokens=700,
-                )
+            data = _ask(
+                llm,
+                system=(
+                    "Draft a sales practice scenario as JSON only, with keys: title, difficulty "
+                    "(Easy|Medium|Hard), public_brief (what the agent is told, 1-2 sentences), "
+                    "customer {name, persona, mood, situation, hidden_objections (3 strings), "
+                    "wins_if, walks_away_if}, opening_line (the customer's first words). "
+                    f"Base it on the product facts.\n\nProduct facts:\n{load_product()}"
+                ),
+                user=f"Customer to practise with: {description}\n\nJSON:",
+                max_tokens=SCENARIO_MAX_TOKENS,
+                schema=schemas.scenario_schema(),
             )
             for key in ("title", "difficulty", "public_brief", "opening_line"):
                 if data.get(key):

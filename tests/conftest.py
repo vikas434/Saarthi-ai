@@ -20,8 +20,8 @@ class FakeLLM:
         self.replies = list(replies)
         self.calls = []
 
-    def complete(self, *, system, user, max_tokens):
-        self.calls.append({"system": system, "user": user})
+    def complete(self, *, system, user, max_tokens, schema=None, effort=None):
+        self.calls.append({"system": system, "user": user, "schema": schema, "effort": effort})
         reply = self.replies.pop(0)
         if isinstance(reply, Exception):
             raise reply

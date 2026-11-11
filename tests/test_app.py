@@ -84,6 +84,7 @@ def test_bad_model_output_falls_back_and_is_cleaned(client, fake_llm):
     fake_llm(
         [
             "not json at all",
+            "still not json",
             json.dumps(
                 {
                     "customer": "Hmm.",
@@ -98,6 +99,7 @@ def test_bad_model_output_falls_back_and_is_cleaned(client, fake_llm):
         f"/api/sessions/{s['id']}/turns", json={"text": "Buy it today only!"}
     ).json()
     assert first["customer"]  # offline fallback answered
+    assert first["fallback"] is True and first["coach"]["fallback"] is True
     second = client.post(f"/api/sessions/{s['id']}/turns", json={"text": "ok"}).json()
     assert second["coach"]["verdict"] == "mixed" and second["coach"]["behavior"] == "clarity"
 
@@ -136,7 +138,7 @@ def test_report_scores_every_marker_type(client, fake_llm):
     class ByPrompt:
         name = "fake"
 
-        def complete(self, *, system, user, max_tokens):
+        def complete(self, *, system, user, max_tokens, schema=None, effort=None):
             if "The call is over" in system:
                 assert "Meera" in system and "0 to 10" in system
                 return survey_reply

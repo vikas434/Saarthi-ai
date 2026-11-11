@@ -4,7 +4,7 @@ Practise customer conversations with an AI customer. A coach comments on each re
 
 Status: local prototype.
 
-![A practice call with live coach notes](docs/screenshots/call.png)
+![A practice call with live coach notes, real model](docs/screenshots/real-call.jpg)
 
 ## Run it
 
@@ -36,7 +36,7 @@ A marker is anything you want agents coached on. There are three kinds, and ever
 
 Add your own in the Setup tab, or edit `config/markers.json`. Paste a checklist one item per line (start a line with `!` to mark it critical), list rubric behaviours as `Name - what good looks like`, or write a survey question with its scale.
 
-![Scorecard by marker](docs/screenshots/scorecard.png)
+![Scorecard by marker, real model](docs/screenshots/real-scorecard.jpg)
 
 ## Make it yours
 
@@ -51,8 +51,9 @@ Keys and emails live only in `.env` (git-ignored) and in Railway variables. A pr
 ## Check it
 
 ```
-.venv/bin/pytest -q             # 9 tests, no key needed
-.venv/bin/python -m app.evals   # a strong agent must beat a weak one on every marker
+.venv/bin/pytest -q             # no key needed
+.venv/bin/python -m app.evals   # a strong agent must beat a weak one on every marker;
+                                # with a key, any fallback reply or score fails it
 ```
 
 See [docs/design.md](docs/design.md) for the full product design and [docs/plan.md](docs/plan.md) for the build order.

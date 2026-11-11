@@ -22,17 +22,18 @@ Source: `HANDOFF.md` (steps 1 to 8), reordered so a deploy happens early and eve
 
 ## Phases
 
-### Phase 0: Bootstrap the repo safely
+### Phase 0: Bootstrap the repo safely (done 2026-11-11)
 - Unpack the prototype here, rewrite author to the noreply address, add `.gitignore` entries (`.env*` except `.env.example`, `data/`, `*.db`).
 - Make the GitHub repo private, add gitleaks (pre-commit + CI), push `main`.
 - Local Python 3.12 venv via `uv`.
 - **Done when:** repo is private, `main` pushed, secret scan clean.
 
-### Phase 1: Verify the real model path (handoff step 1)
+### Phase 1: Verify the real model path (handoff step 1) (done 2026-11-11)
 - Key in `.env`, model `claude-haiku-5-5`. One full call per scenario in Chrome, read each scorecard.
 - Fix JSON shape, character breaks, coach leaking into the customer (split into two calls + ADR 0001 update if needed), too-generous surveys.
 - Retry once on bad JSON, then offline fallback; the UI marks replies and scores that came from the fallback.
 - **Done when:** evals pass with a key 3 runs in a row; screenshots in `docs/screenshots/`.
+- **Found:** thinking on Haiku 5.5 ate the 500-token reply budget (every reply fell back silently, and the eval still said PASS); fixed with schemas, larger budgets and a fallback-aware eval. Scorecard takes 15 to 18 s; revisit in Phase 7.
 
 ### Phase 2: CI (handoff step 2)
 - GitHub Actions: ruff, format check, pytest, offline evals, docker build, gitleaks. Second eval job with the key from repo secrets when set.

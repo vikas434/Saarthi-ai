@@ -18,3 +18,9 @@ Reusing Idli AI's stack (Next.js apps, Postgres, Clerk, Deepgram, ElevenLabs): m
 
 ## Consequences
 The customer and coach share a prompt, so a coach note can leak tone into the customer. Split into two calls if that shows up. SQLite and no sign-in must change before more than one team uses it.
+
+## Update 2026-11-11: verified with a real model
+- Model `claude-haiku-5-5`. It thinks by default, and thinking shares `max_tokens`, so the old 500-token limit left no room for the reply. Every model call now sends a JSON schema (`output_config.format`, see `app/schemas.py`), has a token budget that fits thinking plus the answer, and treats `stop_reason` `max_tokens` or `refusal` as an unusable reply.
+- Replies use effort `low` (fast, cheap). The scorecard uses `medium`: at `low` the judge sometimes let forbidden promises through.
+- An unusable reply is retried once, then the offline fallback answers. The reply, coach note and scorecard carry a `fallback` flag and the page labels them, so a backup answer is never mistaken for coaching.
+- One call per reply is kept. Across three scenarios in the browser and repeated evals the customer stayed in character and no coach wording leaked into the customer's lines, so the turn was not split.
