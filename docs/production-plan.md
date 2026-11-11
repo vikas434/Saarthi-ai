@@ -7,12 +7,31 @@ Source: `HANDOFF.md` (steps 1 to 8), reordered so a deploy happens early and eve
 |---|---|
 | Repo | `vikas434/Saarthi-ai`, **private**. Commits use the GitHub noreply address; old history rewritten to it. |
 | Database | Railway Postgres, one per environment (`staging`, `production`). SQLite stays for local and tests. (Supabase was the first choice; blocked by an overdue invoice in another org, 2026-11-11.) |
-| Hosting | Railway, personal workspace, Railway subdomain. Environments `staging` and `production`. |
-| Deploy flow | Push to `main` → CI green → auto-deploy to staging → smoke test → promote to production. |
+| Hosting | **Now:** free demo track below (Render + Neon, staging only). **Later, when paying:** Railway with `staging` and `production`. |
+| Deploy flow | Push to `main` → CI green → auto-deploy to staging. Production promotion comes with paid hosting. |
 | Auth | Clerk, same app as Idli AI. Admin = `TEACHER_EMAIL`, agents = `STUDENT_EMAILS`. Everyone else sees "Your request is received. We will review and approve." Vikas adds Railway URLs in the Clerk dashboard. |
 | Model | Anthropic, `claude-haiku-5-5` for customer, coach and survey. Move up only if evals fail. Key lives in `.env` and Railway only. |
-| Limits | $2/day spend cap, 20 calls per agent per day, 14 replies per call, per-user API rate limit. |
+| Limits | Demo: **$0.50/day** model spend cap, 20 calls per agent per day, 14 replies per call, per-user API rate limit. Real-model evals in CI run by hand only. |
 | Data | Sample product and rubric only. No employer data. Transcripts deleted after 90 days; scores kept. |
+
+## Free demo track (decided 2026-11-12)
+Goal: a staging URL to show stakeholders, with **no hosting bill**. Paid production (Railway, Phases 6 to 8 in full) waits until the demo earns it.
+
+| Piece | Free choice | Limits that matter for a demo |
+|---|---|---|
+| App | Render free web service, Docker, auto-deploy from GitHub after CI passes, HTTPS on `*.onrender.com`, Singapore | Sleeps after 15 min idle; first request after that takes about a minute. 512 MB RAM. 750 instance hours a month (enough for one service). |
+| Database | Neon free Postgres, Singapore | 1 GB storage, 100 compute hours a month, sleeps after 5 min idle (wakes in about a second). No paid backups. |
+| Sign-in | Clerk, Idli's existing **development** instance | Shows a small "development mode" badge; fine for a demo. Production keys need a custom domain later. |
+| CI | GitHub Actions on the private repo | 2,000 free minutes a month; about 5 per push. |
+| Model | Anthropic key from Idli | The only real cost: about Rs 0.5 per practice call on Haiku 5.5, held under a hard daily cap. |
+
+Demo steps, in order (each ends with checks, commit, push, CI green):
+1. **D1 Sign-in (Phase 4 as written):** Clerk, the two Idli emails only, everyone else sees "Your request is received. We will review and approve."
+2. **D2 Spend guard (the cap part of Phase 7):** record tokens per call, a daily spend cap, calls per agent per day, a clear "limit reached" message. Needed before the URL is public, because the model key costs money.
+3. **D3 Deploy staging (Phase 5, free hosts):** listen on `$PORT`, `/health` and `/ready`, security headers, CORS to its own origin, `render.yaml`, Neon `DATABASE_URL`, secrets in Render only, staging URL added to Clerk.
+4. **D4 Demo check:** full call on the staging URL signed in as an agent, admin sees it, Speak works over HTTPS in Chrome, a one-page demo script in `docs/demo.md`.
+
+Deferred until paying: a separate production environment, tracing, the cost dashboard, backup and restore drills, a custom domain and Clerk production keys.
 
 ## Guardrails on every phase
 - Never commit `.env`, keys, emails or personal data. A gitleaks pre-commit hook, a CI gitleaks job and a manual diff scan run before every push.

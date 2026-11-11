@@ -104,8 +104,8 @@ jobs:
 
   model-evals:
     name: evals with the real model
-    # Costs a few cents per run, so only on main and on demand. Skipped when no key is set.
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    # Costs money per run, so only when started by hand (Actions > ci > Run workflow).
+    if: github.event_name == 'workflow_dispatch'
     needs: checks
     runs-on: ubuntu-latest
     env:
