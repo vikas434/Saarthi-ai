@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-ROOT = Path(os.environ.get("SQS_ROOT") or Path(__file__).resolve().parents[1])
+ROOT = Path(os.environ.get("SAARTHI_ROOT") or Path(__file__).resolve().parents[1])
 
 
 def _load_dotenv() -> None:
@@ -28,7 +28,7 @@ def env(name: str, default: str = "") -> str:
 
 
 def db_path() -> Path:
-    path = Path(env("SQS_DB", "data/sqs.db"))
+    path = Path(env("SAARTHI_DB", "data/saarthi.db"))
     return path if path.is_absolute() else ROOT / path
 
 

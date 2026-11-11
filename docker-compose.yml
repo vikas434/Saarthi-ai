@@ -1,6 +1,6 @@
 # docker compose up --build  ->  http://localhost:8100
 services:
-  sqs-coach:
+  saarthi:
     build: .
     env_file:
       - path: .env
@@ -8,6 +8,6 @@ services:
     ports:
       - "8100:8100"
     volumes:
-      - sqs_data:/srv/data
+      - saarthi_data:/srv/data
 volumes:
-  sqs_data:
+  saarthi_data:

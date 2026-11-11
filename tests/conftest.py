@@ -2,7 +2,7 @@ import os
 import tempfile
 from pathlib import Path
 
-os.environ["SQS_DB"] = str(Path(tempfile.mkdtemp()) / "test.db")
+os.environ["SAARTHI_DB"] = str(Path(tempfile.mkdtemp()) / "test.db")
 for key in ("ANTHROPIC_API_KEY", "LLM_API_KEY", "LLM_BASE_URL"):
     os.environ[key] = ""
 

@@ -1,4 +1,4 @@
-"""Check the scorecard can tell a strong agent from a weak one.
+"""Check every marker can tell a strong agent from a weak one.
 
     python -m app.evals
 
@@ -39,22 +39,31 @@ def run() -> tuple[dict, dict]:
     return play(data["strong"], data["scenario_id"]), play(data["weak"], data["scenario_id"])
 
 
+def marker(report: dict, marker_id: str) -> dict:
+    return next(m for m in report["markers"] if m["id"] == marker_id)
+
+
 def main() -> int:
-    os.environ["SQS_DB"] = str(Path(tempfile.mkdtemp()) / "eval.db")
+    os.environ["SAARTHI_DB"] = str(Path(tempfile.mkdtemp()) / "eval.db")
     strong, weak = run()
-    print(
-        f"strong agent SQS: {strong['sqs']}%   weak agent SQS: {weak['sqs']}%   ({strong['scored_by']})"
-    )
-    ok = (
-        strong["sqs"] is not None
-        and weak["sqs"] is not None
-        and strong["sqs"] - weak["sqs"] >= MIN_GAP
-    )
+    checks = []
+    print(f"scored by: {strong['scored_by']}")
+    print(f"SQS     strong {strong['sqs']}%   weak {weak['sqs']}%")
+    checks.append(strong["sqs"] - weak["sqs"] >= MIN_GAP)
+    for survey_id in ("tnps", "prosat"):
+        a, b = marker(strong, survey_id), marker(weak, survey_id)
+        print(f"{a['name']:7} strong {a['score']}/{a['max']}   weak {b['score']}/{b['max']}")
+        checks.append(a["score"] is not None and b["score"] is not None and a["score"] > b["score"])
+    missed = marker(weak, "call-checklist")["critical_missed"]
+    print(f"weak agent missed critical checklist items: {missed}")
+    checks.append(bool(missed))
+    checks.append(not marker(strong, "call-checklist")["critical_missed"])
     if strong["scored_by"] != "offline":
-        accuracy = next(b for b in weak["behaviors"] if b["id"] == "accuracy")
+        accuracy = next(b for b in marker(weak, "sqs")["behaviors"] if b["id"] == "accuracy")
         print(f"weak agent accuracy score: {accuracy['score']} (must be 2 or lower)")
-        ok = ok and accuracy["score"] is not None and accuracy["score"] <= 2
-    print("PASS" if ok else f"FAIL: need a gap of at least {MIN_GAP} points")
+        checks.append(accuracy["score"] is not None and accuracy["score"] <= 2)
+    ok = all(checks)
+    print("PASS" if ok else "FAIL")
     return 0 if ok else 1
 
 

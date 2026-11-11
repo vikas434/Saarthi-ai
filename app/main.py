@@ -1,4 +1,4 @@
-"""SQS Coach API and the single-page app."""
+"""Saarthi API and the single-page app."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 
 from app import coach, store
 
-app = FastAPI(title="SQS Coach", version="0.1.0")
+app = FastAPI(title="Saarthi", version="0.1.0")
 STATIC = Path(__file__).parent / "static"
 
 
@@ -25,6 +25,15 @@ class TurnIn(BaseModel):
 
 class ProductIn(BaseModel):
     text: str = Field(min_length=20, max_length=20000)
+
+
+class MarkerIn(BaseModel):
+    name: str = Field(min_length=2, max_length=60)
+    type: str = Field(pattern="^(rubric|survey|checklist)$")
+    lines: list[str] = Field(default_factory=list, max_length=40)
+    question: str = Field(default="", max_length=300)
+    min: int = 1
+    max: int = 5
 
 
 class ScenarioIn(BaseModel):
@@ -46,6 +55,7 @@ def config() -> dict:
     return {
         "mode": coach.mode(),
         "rubric": coach.load_rubric(),
+        "markers": coach.load_markers(),
         "scenarios": [coach.public_scenario(s) for s in coach.load_scenarios()],
         "product": coach.load_product(),
     }
@@ -62,6 +72,24 @@ def add_scenario(body: ScenarioIn) -> dict:
     scenario = coach.draft_scenario(body.description)
     store.save_scenario(scenario)
     return coach.public_scenario(scenario)
+
+
+@app.post("/api/markers")
+def add_marker(body: MarkerIn) -> dict:
+    """Add a rubric, survey or checklist marker. It is scored on every call from then on."""
+    try:
+        return coach.add_marker(
+            body.name, body.type, body.lines, question=body.question, lo=body.min, hi=body.max
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.delete("/api/markers/{marker_id}")
+def delete_marker(marker_id: str) -> dict:
+    if not coach.remove_marker(marker_id):
+        raise HTTPException(status_code=404, detail="Only markers added in Setup can be removed")
+    return {"removed": True}
 
 
 def _session_or_404(sid: str) -> dict:

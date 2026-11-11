@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One command to run SQS Coach locally: http://localhost:8100
+# One command to run Saarthi locally: http://localhost:8100
 set -e
 cd "$(dirname "$0")"
 [ -d .venv ] || python3 -m venv .venv

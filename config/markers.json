@@ -1,0 +1,132 @@
+[
+  {
+    "id": "sqs",
+    "name": "SQS",
+    "type": "rubric",
+    "description": "Sales Quality Score: behaviours scored 1 to 5 by the coach and combined by weight.",
+    "behaviors": [
+      {
+        "id": "opening",
+        "name": "Opening and rapport",
+        "weight": 1,
+        "description": "Greets warmly, uses the customer's name, sets a clear purpose for the call."
+      },
+      {
+        "id": "discovery",
+        "name": "Discovery",
+        "weight": 2,
+        "description": "Asks open questions to learn the customer's situation and needs before pitching."
+      },
+      {
+        "id": "listening",
+        "name": "Active listening",
+        "weight": 2,
+        "description": "Reflects back what the customer said and builds on it; does not repeat questions already answered."
+      },
+      {
+        "id": "empathy",
+        "name": "Empathy",
+        "weight": 1.5,
+        "description": "Acknowledges feelings and concerns before moving to a solution."
+      },
+      {
+        "id": "accuracy",
+        "name": "Product accuracy and honesty",
+        "weight": 2,
+        "description": "States only what the product facts support. No invented features, prices or promises."
+      },
+      {
+        "id": "value",
+        "name": "Value framing",
+        "weight": 1.5,
+        "description": "Links product benefits to this customer's stated needs, not a generic feature list."
+      },
+      {
+        "id": "objections",
+        "name": "Objection handling",
+        "weight": 2,
+        "description": "Acknowledges the objection, explores it, answers with facts, checks it is resolved."
+      },
+      {
+        "id": "next_step",
+        "name": "Clear next step",
+        "weight": 1.5,
+        "description": "Ends with a specific, agreed next step without pressure."
+      },
+      {
+        "id": "clarity",
+        "name": "Clarity and brevity",
+        "weight": 1,
+        "description": "Short, plain sentences. No jargon, no rambling."
+      }
+    ]
+  },
+  {
+    "id": "tnps",
+    "name": "tNPS",
+    "type": "survey",
+    "min": 0,
+    "max": 10,
+    "description": "Transactional NPS. The customer answers after the call, in character.",
+    "question": "How likely are you to recommend us to a friend or colleague, based on this conversation? (0 = not at all, 10 = extremely likely)",
+    "drivers": [
+      "empathy",
+      "listening",
+      "objections",
+      "next_step",
+      "clarity"
+    ]
+  },
+  {
+    "id": "prosat",
+    "name": "ProSat",
+    "type": "survey",
+    "min": 1,
+    "max": 5,
+    "description": "Product satisfaction. The customer answers after the call, in character.",
+    "question": "How satisfied are you with the product, based on what you learned in this conversation? (1 = very dissatisfied, 5 = very satisfied)",
+    "drivers": [
+      "accuracy",
+      "value",
+      "discovery"
+    ]
+  },
+  {
+    "id": "call-checklist",
+    "name": "Call checklist",
+    "type": "checklist",
+    "description": "Must-do items on every call. Each is yes, no or not applicable. A missed critical item is called out.",
+    "items": [
+      {
+        "id": "greeting",
+        "text": "Greeted the customer and used their name",
+        "critical": false
+      },
+      {
+        "id": "needs",
+        "text": "Asked at least one question about the customer's needs before pitching",
+        "critical": true
+      },
+      {
+        "id": "no-false-promise",
+        "text": "Made no promise the product facts do not support",
+        "critical": true
+      },
+      {
+        "id": "price-clear",
+        "text": "Stated the price clearly when price came up",
+        "critical": false
+      },
+      {
+        "id": "no-pressure",
+        "text": "Did not pressure the customer to decide immediately",
+        "critical": true
+      },
+      {
+        "id": "next-step",
+        "text": "Confirmed a specific next step before ending",
+        "critical": false
+      }
+    ]
+  }
+]

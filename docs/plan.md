@@ -1,7 +1,7 @@
 # Plan
 
 ## Goal
-Train sales agents on behavioural quality (SQS) through realistic practice: the AI plays the customer, coaches during the call, and scores it afterwards.
+Coach agents on any quality marker (SQS, tNPS, ProSat, checklists) through realistic practice: the AI plays the customer, coaches during the call, and scores it afterwards.
 
 ## Built (2026-11-11)
 - Scenarios with hidden objections; three samples; draft a new one from a sentence.
@@ -11,6 +11,11 @@ Train sales agents on behavioural quality (SQS) through realistic practice: the 
 - Product-claim checking against editable product facts.
 - History, SQS trend and per-behaviour averages.
 - Offline mode, 8 tests, a strong-versus-weak eval, Dockerfile and compose.
+
+## Added (2026-11-11, step 1 of docs/design.md)
+- Marker library with three kinds: rubric, survey, checklist. Add markers in Setup.
+- tNPS and ProSat answered by the customer in character, shown with their driver behaviours.
+- Scorecard, history and the eval are per marker.
 
 ## Not yet verified
 - The model path has only been tested with a scripted fake. Run one call and `python -m app.evals` with a real key before a demo.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SQS Coach</title>
+<title>Saarthi</title>
 <link rel="icon" href="data:,">
 <style>
   :root { --ink:#1c1b29; --muted:#6b6a7b; --line:#e3e2ec; --bg:#f6f6fa; --card:#fff;
@@ -46,13 +46,18 @@
   .beh q { color:var(--muted); } .say { background:#f3fbf6; border-radius:8px; padding:6px 10px; margin-top:6px; }
   table { width:100%; border-collapse:collapse; } th,td { text-align:left; padding:8px; border-bottom:1px solid var(--line); }
   tr.click { cursor:pointer; } tr.click:hover { background:#fafafd; }
+  .tiles { display:grid; gap:12px; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); margin-bottom:16px; }
+  .tile b { font-size:30px; color:var(--brand); display:block; line-height:1.1; }
+  .tile.warn b { color:var(--bad); }
+  .yes { color:var(--good); font-weight:600; } .no { color:var(--bad); font-weight:600; } .na { color:var(--muted); }
+  select { border:1px solid var(--line); border-radius:10px; padding:8px 10px; font:inherit; background:#fff; }
   .muted { color:var(--muted); } .error { color:var(--bad); } .hidden { display:none !important; }
   .mic.on { background:var(--bad); color:#fff; border-color:var(--bad); }
 </style>
 </head>
 <body>
 <header>
-  <h1>SQS Coach</h1>
+  <h1>Saarthi</h1>
   <nav>
     <button data-tab="practice" aria-current="page">Practice</button>
     <button data-tab="history">History</button>
@@ -66,7 +71,7 @@
   <section id="tab-practice">
     <div id="pick">
       <h2>Pick a customer</h2>
-      <p class="lede">The AI plays the customer. You sell. A coach scores each reply, then gives you an SQS scorecard.</p>
+      <p class="lede">The AI plays the customer. You sell. A coach comments on each reply. At the end the customer answers a survey and you get a scorecard for every quality marker.</p>
       <div class="row" style="margin:0 0 16px">
         <label for="agent">Your name</label>
         <input id="agent" type="text" placeholder="Agent name" style="max-width:240px">
@@ -104,7 +109,7 @@
 
   <section id="tab-history" class="hidden">
     <h2>History</h2>
-    <p class="lede">Every practice call, and your average on each SQS behaviour.</p>
+    <p class="lede">Every practice call, the trend on each marker, and your average on each behaviour.</p>
     <div class="card" id="progress" style="margin-bottom:16px"></div>
     <div class="card"><table id="sessions"></table></div>
   </section>
@@ -126,10 +131,32 @@
       </form>
       <p id="scenario-saved" class="muted"></p>
     </div>
+    <div class="card" style="margin-bottom:16px">
+      <h3>Quality markers</h3>
+      <p class="muted">Every call is scored on all of these. Three kinds: a rubric (behaviours scored 1 to 5), a survey the customer answers, and a checklist.</p>
+      <table id="markers"></table>
+    </div>
     <div class="card">
-      <h3>SQS rubric</h3>
-      <p class="muted">Edit <code>config/rubric.json</code> to match your own SQS behaviours and weights.</p>
-      <table id="rubric"></table>
+      <h3>Add a marker</h3>
+      <form id="new-marker">
+        <div class="row">
+          <input id="marker-name" type="text" placeholder="Name, e.g. Compliance checklist" style="max-width:320px" required>
+          <select id="marker-type" aria-label="Marker type">
+            <option value="checklist">Checklist</option>
+            <option value="rubric">Rubric (behaviours 1 to 5)</option>
+            <option value="survey">Customer survey</option>
+          </select>
+        </div>
+        <div id="marker-lines-box" style="margin-top:10px">
+          <textarea id="marker-lines" rows="5" placeholder="One checklist item per line. Start a line with ! to mark it critical."></textarea>
+        </div>
+        <div id="marker-survey-box" class="row hidden">
+          <input id="marker-question" type="text" placeholder="Survey question the customer answers">
+          <label>From <input id="marker-min" type="text" value="1" style="width:56px"></label>
+          <label>to <input id="marker-max" type="text" value="5" style="width:56px"></label>
+        </div>
+        <div class="row"><button class="primary">Add marker</button><span id="marker-saved" class="muted"></span></div>
+      </form>
     </div>
   </section>
 </main>
@@ -180,14 +207,48 @@ async function loadConfig() {
       el("h3", { textContent: s.title, style: "margin-top:8px" }),
       el("p", { className: "muted", textContent: s.public_brief }), start));
   }
-  const rubric = $("rubric"); rubric.replaceChildren(
-    el("tr", {}, el("th", { textContent: "Behaviour" }), el("th", { textContent: "What good looks like" }), el("th", { textContent: "Weight" })));
-  for (const b of cfg.rubric.behaviors)
-    rubric.append(el("tr", {}, el("td", { textContent: b.name }), el("td", { textContent: b.description }), el("td", { textContent: b.weight })));
+  const table = $("markers"); table.replaceChildren(
+    el("tr", {}, ...["Marker", "Kind", "What is scored", ""].map((h) => el("th", { textContent: h }))));
+  for (const m of cfg.markers) {
+    const what = m.type === "rubric" ? m.behaviors.map((b) => b.name).join(", ")
+      : m.type === "survey" ? `${m.question} (${m.min} to ${m.max})`
+      : m.items.map((i) => (i.critical ? "★ " : "") + i.text).join("; ");
+    const action = el("td");
+    if (m.custom) {
+      const rm = el("button", { className: "ghost", textContent: "Remove" });
+      rm.addEventListener("click", async () => {
+        try { await api("/api/markers/" + m.id, { method: "DELETE" }); await loadConfig(); } catch (e) { fail(e); }
+      });
+      action.append(rm);
+    }
+    table.append(el("tr", {}, el("td", { textContent: m.name }), el("td", { textContent: m.type }), el("td", { textContent: what }), action));
+  }
 }
 $("save-product").addEventListener("click", async () => {
   try { await api("/api/product", { method: "PUT", body: JSON.stringify({ text: $("product").value }) });
         $("product-saved").textContent = "Saved."; } catch (e) { fail(e); }
+});
+const LINE_HINTS = {
+  checklist: "One checklist item per line. Start a line with ! to mark it critical.",
+  rubric: "One behaviour per line: Name - what good looks like",
+};
+$("marker-type").addEventListener("change", () => {
+  const type = $("marker-type").value;
+  $("marker-lines-box").classList.toggle("hidden", type === "survey");
+  $("marker-survey-box").classList.toggle("hidden", type !== "survey");
+  if (LINE_HINTS[type]) $("marker-lines").placeholder = LINE_HINTS[type];
+});
+$("new-marker").addEventListener("submit", async (e) => {
+  e.preventDefault(); clearError(); $("marker-saved").textContent = "";
+  try {
+    const m = await api("/api/markers", { method: "POST", body: JSON.stringify({
+      name: $("marker-name").value, type: $("marker-type").value,
+      lines: $("marker-lines").value.split("\n"), question: $("marker-question").value,
+      min: Number($("marker-min").value) || 1, max: Number($("marker-max").value) || 5 }) });
+    $("marker-saved").textContent = `Added "${m.name}". It is scored from the next call.`;
+    $("marker-name").value = ""; $("marker-lines").value = ""; $("marker-question").value = "";
+    await loadConfig();
+  } catch (err) { fail(err); }
 });
 $("new-scenario").addEventListener("submit", async (e) => {
   e.preventDefault(); clearError();
@@ -278,15 +339,30 @@ $("end").addEventListener("click", async () => {
   catch (err) { fail(err); } finally { setBusy(false); $("end").textContent = "End call and score"; }
 });
 
+function markerValue(m) {
+  if (m.type === "survey") return m.score == null ? "–" : `${m.score} / ${m.max}`;
+  if (m.type === "checklist") return m.applicable ? `${m.passed} / ${m.applicable}` : "–";
+  return m.percent == null ? "–" : m.percent + "%";
+}
+function barRow(score, max) {
+  const bar = el("div", { className: "bar" }); const fill = el("i");
+  fill.style.width = (max ? (100 * (score || 0)) / max : 0) + "%"; bar.append(fill); return bar;
+}
 function showReport(s) {
   const r = s.report, box = $("report"); box.replaceChildren();
   $("call").classList.add("hidden"); $("pick").classList.add("hidden"); box.classList.remove("hidden");
   const again = el("button", { className: "primary", textContent: "Practise again" });
   again.addEventListener("click", () => { box.classList.add("hidden"); $("pick").classList.remove("hidden"); });
+  const tiles = el("div", { className: "tiles" });
+  for (const m of r.markers) {
+    const warn = m.type === "checklist" && m.critical_missed.length;
+    tiles.append(el("div", { className: "card tile" + (warn ? " warn" : "") },
+      el("span", { className: "muted", textContent: m.name }), el("b", { textContent: markerValue(m) }),
+      el("span", { className: "muted", textContent: m.type === "survey" ? "customer's answer"
+        : m.type === "checklist" ? (warn ? "critical item missed" : "items done") : "coach score" })));
+  }
   const head = el("div", { className: "card", style: "margin-bottom:16px" },
-    el("div", { className: "muted", textContent: "SQS for this call" }),
-    el("div", { className: "score", textContent: r.sqs == null ? "–" : r.sqs + "%" }),
-    el("p", { textContent: r.summary }),
+    el("h2", { textContent: "Scorecard" }), el("p", { textContent: r.summary }),
     el("p", {}, el("b", { textContent: "Next drill: " }), r.next_drill),
     el("p", { className: "muted", textContent: `Scored by ${r.scored_by} · ${r.agent_turns} replies` }), again);
   const lists = el("div", { className: "grid", style: "margin-bottom:16px" });
@@ -294,24 +370,47 @@ function showReport(s) {
     const ul = el("ul", { style: "margin:0;padding-left:18px" }); items.forEach((x) => ul.append(el("li", { textContent: x })));
     lists.append(el("div", { className: "card" }, el("h3", { textContent: title }), ul));
   }
-  const detail = el("div", { className: "card" }, el("h3", { textContent: "Behaviour by behaviour" }));
-  for (const b of r.behaviors) {
-    const row = el("div", { className: "beh" },
-      el("div", {}, el("b", { textContent: b.name }), ` · ${b.score == null ? "not observed" : b.score + " / 5"}`));
-    const bar = el("div", { className: "bar" }); const fill = el("i"); fill.style.width = ((b.score || 0) * 20) + "%"; bar.append(fill); row.append(bar);
-    if (b.evidence) row.append(el("div", {}, "You said: ", el("q", { textContent: b.evidence })));
-    if (b.good) row.append(el("div", { textContent: "Good: " + b.good }));
-    if (b.improve) row.append(el("div", { textContent: "Improve: " + b.improve }));
-    if (b.say_instead) row.append(el("div", { className: "say", textContent: "Say instead: " + b.say_instead }));
-    detail.append(row);
+  box.append(head, tiles, lists);
+  for (const m of r.markers) {
+    const card = el("div", { className: "card", style: "margin-bottom:16px" },
+      el("h3", { textContent: `${m.name} · ${markerValue(m)}` }));
+    if (m.type === "survey") {
+      card.append(el("p", { className: "muted", textContent: m.question }));
+      if (m.reason && m.answered_by === "offline") card.append(el("p", { className: "muted", textContent: m.reason }));
+      else if (m.reason) card.append(el("p", {}, "The customer said: ", el("q", { textContent: m.reason })));
+      if (m.drivers.length) {
+        card.append(el("p", { className: "muted", textContent: "Behaviours that drive this marker:" }));
+        for (const d of m.drivers)
+          card.append(el("div", { textContent: `${d.name}: ${d.score == null ? "not observed" : d.score + " / 5"}` }), barRow(d.score, 5));
+      }
+    } else if (m.type === "checklist") {
+      for (const item of m.items) {
+        const mark = { yes: "✓ Yes", no: "✗ No", na: "– n/a" }[item.result];
+        const row = el("div", { className: "beh" }, el("span", { className: item.result, textContent: mark }),
+          " · " + item.text + (item.critical ? " (critical)" : ""));
+        if (item.evidence) row.append(el("div", { className: "muted", textContent: item.evidence }));
+        card.append(row);
+      }
+    } else {
+      for (const b of m.behaviors) {
+        const row = el("div", { className: "beh" },
+          el("div", {}, el("b", { textContent: b.name }), ` · ${b.score == null ? "not observed" : b.score + " / 5"}`), barRow(b.score, 5));
+        if (b.evidence) row.append(el("div", {}, "You said: ", el("q", { textContent: b.evidence })));
+        if (b.good) row.append(el("div", { textContent: "Good: " + b.good }));
+        if (b.improve) row.append(el("div", { textContent: "Improve: " + b.improve }));
+        if (b.say_instead) row.append(el("div", { className: "say", textContent: "Say instead: " + b.say_instead }));
+        card.append(row);
+      }
+    }
+    box.append(card);
   }
-  const transcript = el("details", { className: "card", style: "margin-top:16px" }, el("summary", { textContent: "Transcript with coach notes" }));
+  const transcript = el("details", { className: "card" }, el("summary", { textContent: "Transcript with coach notes" }));
   for (const t of s.turns) {
     if (t.agent_text) transcript.append(el("p", {}, el("b", { textContent: "You: " }), t.agent_text));
     if (t.coach) transcript.append(el("p", { className: "muted", textContent: `Coach (${t.coach.verdict}): ${t.coach.note}` }));
     transcript.append(el("p", {}, el("b", { textContent: "Customer: " }), t.customer_text));
   }
-  box.append(head, lists, detail, transcript);
+  box.append(transcript);
   window.scrollTo(0, 0);
 }
 
@@ -319,7 +418,13 @@ function showReport(s) {
 async function loadHistory() {
   const [rows, prog] = await Promise.all([api("/api/sessions"), api("/api/progress")]);
   const p = $("progress"); p.replaceChildren(el("h3", { textContent: `Averages over ${prog.sessions} scored call(s)` }));
-  if (prog.trend.length) p.append(el("p", { className: "muted", textContent: "SQS trend: " + prog.trend.map((x) => x + "%").join(" → ") }));
+  for (const m of prog.markers) {
+    if (!m.trend.length) continue;
+    const unit = m.type === "survey" ? "" : "%";
+    p.append(el("p", {}, el("b", { textContent: m.name + ": " }),
+      m.trend.map((x) => x + unit).join(" → ") + (m.type === "survey" ? ` (out of ${m.max})` : "")));
+  }
+  p.append(el("p", { className: "muted", textContent: "Average per behaviour:" }));
   for (const b of prog.behaviors) {
     const bar = el("div", { className: "bar" }); const fill = el("i"); fill.style.width = ((b.average || 0) * 20) + "%"; bar.append(fill);
     p.append(el("div", { textContent: `${b.name}: ${b.average == null ? "–" : b.average + " / 5"}` }), bar);

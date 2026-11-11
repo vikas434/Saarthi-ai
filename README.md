@@ -1,6 +1,6 @@
-# SQS Coach
+# Saarthi
 
-Practise sales calls with an AI customer. A coach comments on each reply and ends the call with an SQS scorecard: what was good, what to change, and what to say instead.
+Practise customer conversations with an AI customer. A coach comments on each reply. At the end the customer answers a survey, and you get a scorecard for every quality marker: SQS, tNPS, ProSat, checklists, and any marker you add.
 
 Status: local prototype.
 
@@ -19,23 +19,36 @@ With Docker: `docker compose up --build`.
 ## How a session works
 
 1. Pick a customer scenario. You see a short brief. The customer's real concerns stay hidden.
-2. Talk to the customer by typing or with the Speak button (Chrome speech recognition). The customer can speak aloud.
+2. Talk to the customer by typing or with the Speak button (Chrome speech recognition).
 3. After each reply the coach notes one behaviour: good, mixed or improve, with a line to try instead.
-4. End the call. The scorecard gives each SQS behaviour a score from 1 to 5 with your own words as evidence, and a weighted SQS percentage.
-5. History shows your SQS trend and your average on each behaviour.
+4. End the call. Two things happen together: the coach scores behaviours and checklists, and the customer answers the survey in character.
+5. History shows the trend on each marker and your average on each behaviour.
+
+## Markers
+
+A marker is anything you want agents coached on. There are three kinds, and every call is scored on all of them.
+
+| Kind | Who scores it | Example |
+|---|---|---|
+| Rubric | The coach scores each behaviour 1 to 5, with a quote; weights give a percentage | SQS |
+| Survey | The customer answers in character after the call, with a reason; the scorecard shows the behaviours that drive it | tNPS (0 to 10), ProSat (1 to 5) |
+| Checklist | The coach marks each item yes, no or not applicable; a missed critical item is called out | Call checklist |
+
+Add your own in the Setup tab, or edit `config/markers.json`. Paste a checklist one item per line (start a line with `!` to mark it critical), list rubric behaviours as `Name - what good looks like`, or write a survey question with its scale.
+
+![Scorecard by marker](docs/screenshots/scorecard.png)
 
 ## Make it yours
 
 - **Product facts:** Setup tab, or `config/product.md`. The coach marks down any claim these facts don't support.
-- **SQS rubric:** `config/rubric.json`. Names, descriptions and weights. The sample rubric is a starting point, not your official SQS.
-- **Customers:** Setup tab drafts a scenario from one sentence. Built-in ones are in `config/scenarios.json`.
+- **Customers:** Setup drafts a scenario from one sentence. Built-in ones are in `config/scenarios.json`.
 - **Model:** `LLM_PROVIDER=anthropic`, or `openai_compatible` with `LLM_BASE_URL` for a company gateway.
 
 ## Check it
 
 ```
-.venv/bin/pytest -q          # 8 tests, no key needed
-.venv/bin/python -m app.evals   # a strong agent must outscore a weak one by 15+ points
+.venv/bin/pytest -q             # 9 tests, no key needed
+.venv/bin/python -m app.evals   # a strong agent must beat a weak one on every marker
 ```
 
-See [docs/plan.md](docs/plan.md) for what is built and what comes next.
+See [docs/design.md](docs/design.md) for the full product design and [docs/plan.md](docs/plan.md) for the build order.

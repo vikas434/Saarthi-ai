@@ -13,3 +13,7 @@
 | Coach note | The coach's comment on one reply: good, mixed or improve, with a line to try instead. |
 | Scorecard | The end-of-call report: SQS, each behaviour with evidence, strengths, growth areas, next drill. |
 | Offline mode | No model key: scripted customer and rule-of-thumb scoring. |
+| Marker | Anything agents are coached on. Three kinds: rubric, survey, checklist. |
+| Survey marker | A question the customer answers in character after the call, such as tNPS or ProSat. |
+| Driver | A behaviour that moves a survey marker. |
+| Checklist marker | Items marked yes, no or not applicable. A critical item that is missed is called out. |

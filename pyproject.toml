@@ -1,7 +1,7 @@
 [project]
-name = "sqs-coach"
+name = "saarthi"
 version = "0.1.0"
-description = "Practice sales conversations with an AI customer and get an SQS scorecard"
+description = "Practice sales conversations with an AI customer and get coached on quality markers"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115.0",
