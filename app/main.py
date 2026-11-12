@@ -14,6 +14,7 @@ from app import auth, coach, db, limits, roleplays, store, usage, voice
 from app.auth import AuthError, Principal
 from app.dashboard_routes import router as dashboard_router
 from app.deps import Admin, User
+from app.insights_routes import router as insights_router
 from app.limits import LimitReached
 from app.roleplay_routes import router as roleplay_router
 from app.telemetry import TelemetryMiddleware
@@ -41,6 +42,7 @@ app.add_middleware(TelemetryMiddleware)
 app.include_router(roleplay_router)
 app.include_router(tutor_router)
 app.include_router(dashboard_router)
+app.include_router(insights_router)
 STATIC = Path(__file__).parent / "static"
 
 

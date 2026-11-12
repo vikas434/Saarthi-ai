@@ -1,0 +1,11 @@
+{
+  "spend_cap_pct": 80,
+  "voice_cap_pct": 80,
+  "fallback_pct_24h": 10,
+  "fallback_min_calls_24h": 5,
+  "p95_reply_seconds": 8,
+  "p95_min_replies_24h": 5,
+  "error_pct_24h": 2,
+  "error_min_requests_24h": 20,
+  "quiet_days": 3
+}

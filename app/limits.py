@@ -61,9 +61,13 @@ def calls_left(user_id: str) -> int:
     return max(0, calls_per_day() - usage.calls_today(user_id))
 
 
+def daily_spend_cap() -> float:
+    return _float_env("DAILY_SPEND_CAP_USD", DEFAULT_DAILY_SPEND_CAP_USD)
+
+
 def check_spend() -> None:
     """Raise LimitReached when today's model spend has reached the cap."""
-    if usage.spend_today() >= _float_env("DAILY_SPEND_CAP_USD", DEFAULT_DAILY_SPEND_CAP_USD):
+    if usage.spend_today() >= daily_spend_cap():
         raise LimitReached(SPEND_LIMIT_MESSAGE)
 
 
