@@ -121,6 +121,9 @@ def get_scenario(scenario_id: str) -> dict | None:
     return next((s for s in load_scenarios() if s["id"] == scenario_id), None)
 
 
+DEFAULT_CALL_MINUTES = 6  # a roleplay may set its own "minutes"
+
+
 def public_scenario(s: dict) -> dict:
     """What the sales agent may see: never the hidden objections."""
     return {
@@ -129,6 +132,7 @@ def public_scenario(s: dict) -> dict:
         "difficulty": s.get("difficulty", "Medium"),
         "public_brief": s["public_brief"],
         "customer_name": s["customer"]["name"],
+        "minutes": int(s.get("minutes") or DEFAULT_CALL_MINUTES),
     }
 
 

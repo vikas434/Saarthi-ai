@@ -74,7 +74,14 @@ def get_session(sid: str) -> dict | None:
         }
 
 
-def add_turn(sid: str, agent_text: str, customer_text: str, coach: dict, done: bool) -> None:
+def add_turn(
+    sid: str,
+    agent_text: str,
+    customer_text: str,
+    coach: dict,
+    done: bool,
+    agent_seconds: float | None = None,
+) -> None:
     with _tx() as conn:
         idx = conn.execute(
             text("SELECT COALESCE(MAX(idx), 0) + 1 FROM turns WHERE session_id = :sid"),
@@ -82,8 +89,9 @@ def add_turn(sid: str, agent_text: str, customer_text: str, coach: dict, done: b
         ).scalar_one()
         conn.execute(
             text(
-                "INSERT INTO turns (session_id, idx, agent_text, customer_text, coach) "
-                "VALUES (:sid, :idx, :agent_text, :customer_text, :coach)"
+                "INSERT INTO turns "
+                "(session_id, idx, agent_text, customer_text, coach, agent_seconds) "
+                "VALUES (:sid, :idx, :agent_text, :customer_text, :coach, :agent_seconds)"
             ),
             {
                 "sid": sid,
@@ -91,6 +99,7 @@ def add_turn(sid: str, agent_text: str, customer_text: str, coach: dict, done: b
                 "agent_text": agent_text,
                 "customer_text": customer_text,
                 "coach": json.dumps(coach),
+                "agent_seconds": agent_seconds,
             },
         )
         if done:

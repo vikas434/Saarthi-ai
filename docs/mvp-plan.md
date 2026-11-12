@@ -36,7 +36,7 @@ Each phase ships through staging (checks, evals, commit, push, CI green, auto-de
 - ADR 0004: open sign-up alongside the allow-list (`OPEN_SIGNUP=1`).
 - Note: nothing deletes old transcripts yet, so the first-visit note does not promise it.
 
-### M1 Hands-free voice call
+### M1 Hands-free voice call (done 2026-11-12)
 - Phone-ring intro, the customer speaks first, then the mic opens automatically after each customer line; silence ends your turn.
 - The call ends itself near the roleplay's time limit, or when the customer wraps up.
 - Typing stays available; Chrome only for voice (other browsers fall back to chat with a note).

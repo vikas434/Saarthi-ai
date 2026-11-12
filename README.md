@@ -9,7 +9,7 @@ Practise customer calls with an AI customer. A coach comments on every reply, an
 ## What it does
 
 1. **Pick a customer.** Each scenario has a short brief for the agent; the customer's real concerns stay hidden.
-2. **Talk.** Type, or press 🎤 Speak (Chrome speech recognition; needs HTTPS or localhost). The customer can speak back.
+2. **Talk.** Hands-free by default in Chrome: the phone rings, the customer speaks first, and Saarthi listens after each line; pause to send. Typing always works. Each call has a time limit (6 minutes unless the roleplay sets one) and ends itself when time runs out.
 3. **Get coached live.** After each reply the coach names one behaviour (good, mixed or improve), quotes you, and suggests a better line. Product claims are checked against the product facts.
 4. **End the call.** The coach scores every behaviour and checklist item while the customer answers the survey, in parallel.
 5. **Track progress.** History shows every call, the trend per marker and the average per behaviour.
@@ -72,6 +72,7 @@ All configuration is environment variables; `.env.example` lists every one.
 | `OPEN_SIGNUP` | `1` lets anyone who signs in practise as an agent |
 | `AUTH_DEV_BYPASS` | Local sign-in by typing an allow-listed email |
 | `DAILY_SPEND_CAP_USD`, `MAX_CALLS_PER_USER_PER_DAY`, `RATE_LIMIT_PER_MINUTE` | Cost guards (staging: $2, 10, 60) |
+| `MAX_REPLIES_PER_CALL` | Agent replies per call before it must be scored (default 14) |
 | `FORCE_HTTPS`, `PORT` | Hosting: HTTPS redirect and HSTS behind a proxy; the port to listen on |
 | `CLERK_JS_VERSION`, `CLERK_UI_VERSION` | Majors of Clerk's browser script (6) and sign-in screens (1) |
 
@@ -81,7 +82,7 @@ Every model call's tokens and cost go into the `usage` table, priced from `confi
 
 ## How it is built
 
-One FastAPI app serves the API and a single static page ([ADR 0001](docs/adr/0001-one-app-one-call-per-turn.md)).
+One FastAPI app serves the API and a single static page ([ADR 0001](docs/adr/0001-one-app-one-call-per-turn.md)); voice is in the browser ([ADR 0005](docs/adr/0005-hands-free-voice-calls.md)).
 
 ```
 app/
@@ -96,6 +97,7 @@ app/
   limits.py        spend cap, calls per day, rate limit
   web_security.py  security headers, HTTPS redirect
   static/index.html  the whole front end
+  static/voice.js    ring, customer voice, hands-free listening (browser speech, no keys)
 config/            markers, scenarios, sample product facts, model prices
 evals/             strong and weak agent scripts for python -m app.evals
 tests/, e2e/       unit tests and the browser smoke test

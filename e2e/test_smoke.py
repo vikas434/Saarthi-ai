@@ -121,6 +121,7 @@ def test_offline_call_reaches_the_scorecard_and_tabs_open(page: Page) -> None:
     _sign_in(page, "admin@example.com")
     expect(page.locator("#mode")).to_contain_text("Offline demo mode")
     page.fill("#agent", "Smoke test")
+    page.evaluate("document.getElementById('hands-free').checked = false")  # typed call
     page.locator("#scenarios button", has_text="Start call").first.click()
     expect(page.locator("#call")).to_be_visible()
     page.uncheck("#speak")
@@ -141,3 +142,54 @@ def test_offline_call_reaches_the_scorecard_and_tabs_open(page: Page) -> None:
     expect(page.locator("#markers tr", has_text="SQS")).to_be_visible()
     expect(page.locator("#product")).not_to_be_empty()
     expect(page.locator("#access-requests")).to_contain_text("stranger@example.com")
+
+
+# A stand-in microphone and voice: the fake recogniser "hears" the next scripted line, the fake
+# voice finishes speaking at once. Real Chrome speech needs a person and a microphone.
+FAKE_VOICE = """
+window.__heard = ["Hi Meera, thanks for calling. How do you keep your books today?",
+                  "That sounds tiring. What would make Sundays easier?"];
+window.__listens = 0;
+class FakeRecognition {
+  start() {
+    window.__listens += 1;
+    const line = window.__heard.shift();
+    if (line) setTimeout(() => this.onresult({ results: [[{ transcript: line }]] }), 300);
+  }
+  stop() { setTimeout(() => this.onend && this.onend(), 10); }
+}
+window.SpeechRecognition = FakeRecognition;
+window.webkitSpeechRecognition = FakeRecognition;
+Object.defineProperty(window, "speechSynthesis", { value: {
+  speak(u) { setTimeout(() => u.onend && u.onend(), 20); }, cancel() {} } });
+"""
+
+
+def test_hands_free_call_listens_sends_and_listens_again(base_url: str) -> None:
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.add_init_script(FAKE_VOICE)
+        sent: list[str] = []
+        page.on(
+            "request",
+            lambda r: sent.append(r.post_data or "") if r.url.endswith("/turns") else None,
+        )
+        page.goto(base_url)
+        page.evaluate("localStorage.clear()")
+        page.reload()
+        _sign_in(page, "admin@example.com")
+        expect(page.locator("#hands-free")).to_be_checked()
+        page.locator("#scenarios button", has_text="Start call").first.click()
+        expect(page.locator("#clock")).to_contain_text("Time left")
+        # Ring, opening line, then two spoken replies go out without any click.
+        expect(page.locator("#chat .msg.agent")).to_have_count(2, timeout=20_000)
+        expect(page.locator("#chat .msg.customer")).to_have_count(3, timeout=20_000)
+        assert len(sent) == 2 and all('"seconds"' in body for body in sent)
+        # After the second reply it is listening again, waiting for the agent.
+        expect(page.locator("#mic")).to_have_text("■ Done")
+        assert page.evaluate("window.__listens") == 3
+        page.click("#end")
+        expect(page.locator("#report h2", has_text="Scorecard")).to_be_visible()
+        expect(page.locator("#clock")).to_have_text("")
+        browser.close()

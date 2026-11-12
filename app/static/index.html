@@ -58,6 +58,9 @@
   .welcome p { margin:0; } .welcome button { white-space:nowrap; }
   .muted { color:var(--muted); } .error { color:var(--bad); } .hidden { display:none !important; }
   .mic.on { background:var(--bad); color:#fff; border-color:var(--bad); }
+  .call-head { display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
+  #clock { font-variant-numeric:tabular-nums; } #clock.low { color:var(--bad); font-weight:600; }
+  #voice-status { min-height:1.4em; margin:8px 0 0; }
 </style>
 </head>
 <body>
@@ -86,13 +89,15 @@
       <div class="row" style="margin:0 0 16px">
         <label for="agent">Your name</label>
         <input id="agent" type="text" placeholder="Agent name" style="max-width:240px">
+        <label id="hands-free-label"><input type="checkbox" id="hands-free"> Hands-free voice</label>
       </div>
+      <p id="voice-help" class="muted"></p>
       <p id="calls-left" class="muted"></p>
       <div id="scenarios" class="grid"></div>
     </div>
 
     <div id="call" class="hidden">
-      <h2 id="call-title"></h2>
+      <div class="call-head"><h2 id="call-title"></h2><span id="clock" class="muted"></span></div>
       <p id="call-brief" class="lede"></p>
       <div class="call">
         <div class="card">
@@ -102,6 +107,7 @@
             <input id="text" type="text" placeholder="Type or speak your reply to the customer" autocomplete="off">
             <button class="primary" id="send">Send</button>
           </form>
+          <p id="voice-status" class="muted" aria-live="polite"></p>
           <div class="row">
             <label><input type="checkbox" id="speak" checked> Customer speaks aloud</label>
             <label><input type="checkbox" id="live" checked> Live coaching</label>
@@ -178,6 +184,7 @@
   </section>
 </main>
 
+<script src="/voice.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => {
@@ -356,29 +363,69 @@ $("new-scenario").addEventListener("submit", async (e) => {
   } catch (err) { $("scenario-saved").textContent = ""; fail(err); }
 });
 
-// Voice: browser speech recognition and speech synthesis (Chrome). No keys needed.
-const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-let recog = null;
-if (Recognition) {
-  recog = new Recognition(); recog.lang = "en-IN"; recog.interimResults = true; recog.continuous = false;
-  recog.onresult = (e) => { $("text").value = Array.from(e.results).map((r) => r[0].transcript).join(" "); };
-  recog.onend = () => { $("mic").classList.remove("on"); $("mic").textContent = "🎤 Speak";
-                        if ($("text").value.trim()) $("say").requestSubmit(); };
-  recog.onerror = () => { $("mic").classList.remove("on"); $("mic").textContent = "🎤 Speak"; };
-} else { $("mic").disabled = true; $("mic").title = "Speech input needs Chrome"; }
-$("mic").addEventListener("click", () => {
-  if (!recog) return;
-  if ($("mic").classList.contains("on")) { recog.stop(); return; }
-  window.speechSynthesis?.cancel();
-  $("text").value = ""; $("mic").classList.add("on"); $("mic").textContent = "■ Stop";
-  try { recog.start(); } catch {}
-});
-function speak(text) {
-  if (!$("speak").checked || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text); u.lang = "en-IN"; u.rate = 1.02;
-  window.speechSynthesis.speak(u);
+// Voice call: the ring, the customer's voice and hands-free listening come from /voice.js.
+const V = window.SaarthiVoice;
+const HANDS_FREE_KEY = "saarthi.handsFree";
+let listener = null, clockTimer = null, callEndsAt = 0, timeUp = false, customerDone = false, scoring = false;
+function handsFreeOn() { return V.canListen && $("hands-free").checked; }
+(function initVoice() {
+  let pref = null; try { pref = localStorage.getItem(HANDS_FREE_KEY); } catch {}
+  $("hands-free").checked = V.canListen && pref !== "0";
+  $("hands-free").disabled = !V.canListen;
+  $("voice-help").textContent = V.canListen
+    ? "Hands-free: the phone rings, the customer speaks first, and Saarthi listens after each line. Pause to send."
+    : "Hands-free voice needs Chrome. You can type your replies.";
+  if (!V.canListen) { $("mic").disabled = true; $("mic").title = "Speech input needs Chrome"; }
+  $("hands-free").addEventListener("change", () => {
+    try { localStorage.setItem(HANDS_FREE_KEY, $("hands-free").checked ? "1" : "0"); } catch {}
+  });
+})();
+function voiceStatus(text) { $("voice-status").textContent = text; }
+function setMic(on) { $("mic").classList.toggle("on", on); $("mic").textContent = on ? "■ Done" : "🎤 Speak"; }
+function stopListening() {
+  if (!listener) return;
+  const l = listener; listener = null; l.cancel(); setMic(false); voiceStatus("");
 }
+function listenForReply() {
+  if (!session || busy || listener || scoring || !V.canListen || callOver()) return;
+  V.stopSpeaking(); $("text").value = ""; setMic(true);
+  voiceStatus("Listening… pause when you're done, or press ■ Done.");
+  listener = V.listen({
+    onText: (t) => { $("text").value = t; },
+    onDone: ({ text, seconds }) => {
+      listener = null; setMic(false);
+      if (text) { voiceStatus(""); sendReply(text, seconds); return; }
+      if (timeUp) { finishCall(); return; }
+      voiceStatus("Didn't catch that. Press 🎤 Speak or type your reply.");
+    },
+  });
+}
+$("mic").addEventListener("click", () => { if (listener) listener.stop(); else listenForReply(); });
+// Typing takes over from listening.
+$("text").addEventListener("keydown", () => stopListening());
+async function customerSpeaks(text) { if ($("speak").checked) await V.say(text); }
+function callOver() { return customerDone || timeUp; }
+function afterCustomer() {
+  if (scoring || !session) return;
+  if (timeUp || (customerDone && handsFreeOn())) { finishCall(); return; }
+  if (customerDone) return;
+  if (handsFreeOn()) listenForReply(); else $("text").focus();
+}
+function finishCall() { if (session && !scoring) $("end").click(); }
+function showClock() {
+  const left = Math.max(0, Math.round((callEndsAt - Date.now()) / 1000));
+  $("clock").textContent = `Time left ${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`;
+  $("clock").classList.toggle("low", left <= 30);
+  if (left > 0 || timeUp) return;
+  timeUp = true; voiceStatus("Time's up. Wrapping up the call…");
+  if (listener) listener.stop();          // sends what was said; the reply then ends the call
+  else if (!busy) finishCall();
+}
+function startClock(minutes) {
+  stopClock(); timeUp = false; callEndsAt = Date.now() + minutes * 60000;
+  showClock(); clockTimer = setInterval(showClock, 1000);
+}
+function stopClock() { clearInterval(clockTimer); clockTimer = null; $("clock").textContent = ""; }
 
 // Call
 const FALLBACK_TIP = "The model's reply could not be used, so a scripted backup answered.";
@@ -405,7 +452,7 @@ $("live").addEventListener("change", () =>
   document.querySelectorAll("#coach .note").forEach((n) => n.classList.toggle("hidden", !$("live").checked)));
 
 async function startCall(scenarioId) {
-  clearError();
+  clearError(); V.unlockAudio();  // sound needs the click that started the call
   const data = await api("/api/sessions", { method: "POST",
     body: JSON.stringify({ scenario_id: scenarioId, agent_name: $("agent").value.trim() || "Agent" }) });
   session = data;
@@ -415,30 +462,51 @@ async function startCall(scenarioId) {
   $("call-brief").textContent = data.scenario.public_brief;
   $("chat").replaceChildren();
   $("coach").replaceChildren(el("p", { className: "muted", id: "coach-empty", textContent: "Notes on each of your replies appear here." }));
-  setBusy(false);
-  addMsg("customer", data.customer, data.scenario.customer_name); speak(data.customer);
-  $("text").focus();
+  customerDone = false; scoring = false; voiceStatus(""); setBusy(false);
+  $("mic").disabled = !V.canListen; $("text").placeholder = "Type or speak your reply to the customer";
+  startClock(data.scenario.minutes);
+  const sid = data.id;
+  if (handsFreeOn()) {
+    setBusy(true); voiceStatus(`Calling ${data.scenario.customer_name}…`);
+    await V.ring();
+    if (session?.id !== sid) return;
+    setBusy(false); voiceStatus("");
+  }
+  addMsg("customer", data.customer, data.scenario.customer_name);
+  await customerSpeaks(data.customer);
+  if (session?.id === sid) afterCustomer();
 }
 function setBusy(on) { busy = on; $("send").disabled = on; $("text").disabled = on; $("end").disabled = on; }
-$("say").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const text = $("text").value.trim();
+$("say").addEventListener("submit", (e) => {
+  e.preventDefault(); stopListening(); sendReply($("text").value.trim());
+});
+// seconds: how long the agent spoke (spoken replies only).
+async function sendReply(text, seconds = null) {
   if (!text || busy || !session) return;
+  const sid = session.id;
   clearError(); setBusy(true); addMsg("agent", text, "You"); $("text").value = "";
   try {
-    const r = await api(`/api/sessions/${session.id}/turns`, { method: "POST", body: JSON.stringify({ text }) });
-    addMsg("customer", r.customer, session.scenario.customer_name, r.fallback); speak(r.customer); addNote(r.coach);
+    const body = seconds == null ? { text } : { text, seconds };
+    const r = await api(`/api/sessions/${sid}/turns`, { method: "POST", body: JSON.stringify(body) });
+    if (session?.id !== sid || scoring) return;
+    addMsg("customer", r.customer, session.scenario.customer_name, r.fallback); addNote(r.coach);
     setBusy(false);
-    if (r.done) { $("send").disabled = true; $("text").disabled = true;
-                  $("text").placeholder = "The call has ended. Click End call and score."; }
-    else $("text").focus();
+    if (r.done) {
+      customerDone = true; $("send").disabled = true; $("text").disabled = true; $("mic").disabled = true;
+      $("text").placeholder = "The customer has ended the call. Click End call and score.";
+    }
+    await customerSpeaks(r.customer);
+    if (session?.id === sid) afterCustomer();
   } catch (err) { setBusy(false); fail(err); }
-});
+}
 $("end").addEventListener("click", async () => {
   if (!session) return;
-  clearError(); setBusy(true); $("end").textContent = "Scoring…"; window.speechSynthesis?.cancel();
+  if (scoring) return;
+  scoring = true; stopListening(); V.stopSpeaking(); stopClock(); voiceStatus("");
+  clearError(); setBusy(true); $("end").textContent = "Scoring…";
   try { showReport(await api(`/api/sessions/${session.id}/end`, { method: "POST" })); }
-  catch (err) { fail(err); } finally { setBusy(false); $("end").textContent = "End call and score"; }
+  catch (err) { scoring = false; fail(err); }
+  finally { setBusy(false); $("mic").disabled = !V.canListen; $("end").textContent = "End call and score"; }
 });
 
 function markerValue(m) {

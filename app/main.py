@@ -43,6 +43,8 @@ class StartIn(BaseModel):
 
 class TurnIn(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
+    # How long the agent spoke, for spoken replies only.
+    seconds: float | None = Field(default=None, ge=0, le=600)
 
 
 class ProductIn(BaseModel):
@@ -110,6 +112,16 @@ def ready() -> JSONResponse:
 def index() -> FileResponse:
     # Always revalidate, so a new deploy is seen on the next load.
     return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
+
+
+@app.get("/voice.js")
+def voice_js() -> FileResponse:
+    """Voice for practice calls (ring, customer voice, hands-free listening)."""
+    return FileResponse(
+        STATIC / "voice.js",
+        media_type="text/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
 
 
 @app.get("/api/auth/config")
@@ -218,9 +230,21 @@ def turn(sid: str, body: TurnIn, user: User) -> dict:
     session = _session_or_404(sid, user)
     if session["report"] is not None or session["done"]:
         raise HTTPException(status_code=409, detail="This call has ended. Get the scorecard.")
+    if sum(1 for t in session["turns"] if t["agent_text"]) >= limits.max_replies_per_call():
+        raise HTTPException(
+            status_code=409,
+            detail="This call reached its reply limit. End it to get the scorecard.",
+        )
     with usage.attribute(session_id=sid, user_id=user.user_id):
         result = coach.next_turn(session, body.text.strip())
-    store.add_turn(sid, body.text.strip(), result["customer"], result["coach"], result["done"])
+    store.add_turn(
+        sid,
+        body.text.strip(),
+        result["customer"],
+        result["coach"],
+        result["done"],
+        agent_seconds=body.seconds,
+    )
     return result
 
 

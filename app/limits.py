@@ -15,6 +15,7 @@ from app.config import env
 DEFAULT_DAILY_SPEND_CAP_USD = 0.50
 DEFAULT_MAX_CALLS_PER_USER_PER_DAY = 20
 DEFAULT_RATE_LIMIT_PER_MINUTE = 60
+DEFAULT_MAX_REPLIES_PER_CALL = 14
 WINDOW_SECONDS = 60.0
 
 SPEND_LIMIT_MESSAGE = (
@@ -46,6 +47,10 @@ def _int_env(name: str, default: int) -> int:
         return int(env(name) or default)
     except ValueError:
         return default
+
+
+def max_replies_per_call() -> int:
+    return _int_env("MAX_REPLIES_PER_CALL", DEFAULT_MAX_REPLIES_PER_CALL)
 
 
 def calls_per_day() -> int:
