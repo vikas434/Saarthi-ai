@@ -4,10 +4,10 @@
 - Date: 2026-11-12
 
 ## Context
-Saarthi is going on a public URL with a paid model key behind it. Only two people should get in for now (the same two as Idli AI), and nobody else should be able to start calls or see transcripts.
+Saarthi is going on a public URL with a paid model key behind it. Only two people should get in for now (the same two emails as Idli AI), and nobody else should be able to start calls or see transcripts.
 
 ## Decision
-- Sign-in is Clerk, the same Clerk application as Idli AI (its live development instance). The page loads Clerk's own script from the instance's Frontend API and sends the session token as `Authorization: Bearer` on every call.
+- Sign-in is Clerk, its own Clerk application named "Saarthi" (development instance; sign-in by Google or an emailed code, no passwords). The page loads Clerk's own script from the instance's Frontend API and sends the session token as `Authorization: Bearer` on every call.
 - The server verifies the token itself (`app/auth.py`): RS256 against Clerk's JWKS (fetched with the secret key, cached for an hour), expiry with 30 s clock skew, and `azp` against `CLERK_AUTHORIZED_PARTIES` when set. The email comes from the token or Clerk's user API (cached ten minutes).
 - Access is an env allow-list, not a database table: `TEACHER_EMAIL` is the **admin** (every call, Setup, access requests); `STUDENT_EMAILS` are **agents** (own calls only). Changing who gets in means changing env and restarting. No email is hardcoded anywhere in the repo.
 - Anyone else who signs in gets 403 with exactly "Your request is received. We will review and approve." on every `/api` route; the page shows only that sentence. Each such email is kept once in `access_requests` (first seen, last seen, attempts counted at most once a minute) and listed for the admin in Setup.
@@ -17,5 +17,5 @@ Saarthi is going on a public URL with a paid model key behind it. Only two peopl
 
 ## Consequences
 - New dependency: `pyjwt[crypto]`.
-- The sign-in box says "Idli AI" and shows Clerk's "Development mode" badge, because the Clerk app and instance are shared. A separate Clerk application, or production keys on a custom domain, removes both.
-- Idli's root `.env` holds a stale publishable key for a deleted instance; Saarthi uses the live one that Idli's web apps use.
+- Clerk shows a "Development mode" badge until production keys are set up on a custom domain.
+- Saarthi does not share a Clerk application with Idli AI, so changes to one never affect the other. Only the two allowed emails are the same, and they come from env.

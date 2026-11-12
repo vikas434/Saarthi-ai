@@ -218,7 +218,7 @@ async function signIn() {
     await window.Clerk.load();
     if (!window.Clerk.user) {
       const box = el("div");
-      showGate(el("h2", { textContent: "Sign in to Saarthi" }), box);
+      showGate(box);
       window.Clerk.mountSignIn(box, { forceRedirectUrl: location.href });
       window.Clerk.addListener(({ user }) => { if (user) location.reload(); });
       return false;
