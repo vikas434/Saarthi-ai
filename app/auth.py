@@ -34,6 +34,9 @@ EMAIL_TTL_SECONDS = 600
 HTTP_TIMEOUT_SECONDS = 10.0
 CLOCK_SKEW_SECONDS = 30
 HOSTED_ENV_MARKERS = ("RAILWAY_ENVIRONMENT", "RENDER")
+# Major version of Clerk's browser script. Clerk refuses sign-in from majors it has retired.
+DEFAULT_CLERK_JS_VERSION = "6"
+DEFAULT_CLERK_UI_VERSION = "1"  # @clerk/ui, the sign-in screens clerk-js 6 loads separately
 
 Role = Literal["admin", "agent"]
 
@@ -93,7 +96,13 @@ def public_config() -> dict:
     """What the page needs to start sign-in. Never includes a secret."""
     if clerk_configured():
         pk = env("CLERK_PUBLISHABLE_KEY")
-        return {"mode": "clerk", "publishable_key": pk, "frontend_api": frontend_api_host(pk)}
+        return {
+            "mode": "clerk",
+            "publishable_key": pk,
+            "frontend_api": frontend_api_host(pk),
+            "clerk_js_version": env("CLERK_JS_VERSION", DEFAULT_CLERK_JS_VERSION),
+            "clerk_ui_version": env("CLERK_UI_VERSION", DEFAULT_CLERK_UI_VERSION),
+        }
     if dev_bypass_enabled():
         return {"mode": "dev"}
     return {"mode": "off"}

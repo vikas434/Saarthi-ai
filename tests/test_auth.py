@@ -150,3 +150,11 @@ def test_expired_or_forged_or_foreign_tokens_are_rejected(anon, clerk_keys):
 def test_frontend_api_host_comes_from_the_publishable_key():
     fapi = base64.b64encode(b"example.clerk.accounts.dev$").decode()
     assert auth.frontend_api_host(f"pk_test_{fapi}") == "example.clerk.accounts.dev"
+
+
+def test_clerk_config_names_a_current_clerk_js_major(anon, clerk_keys):
+    conf = anon.get("/api/auth/config").json()
+    assert conf["mode"] == "clerk" and conf["frontend_api"] == "example.clerk.accounts.dev"
+    assert int(conf["clerk_js_version"]) >= 6  # Clerk refuses sign-in from retired majors
+    assert conf["clerk_ui_version"]  # clerk-js 6 needs its separate UI bundle
+    assert "secret" not in str(conf).lower()

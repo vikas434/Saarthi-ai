@@ -213,9 +213,12 @@ async function signIn() {
   const conf = await (await fetch("/api/auth/config")).json();
   authMode = conf.mode;
   if (authMode === "clerk") {
-    await loadScript(`https://${conf.frontend_api}/npm/@clerk/clerk-js@5/dist/clerk.browser.js`,
+    // clerk-js 6 is core only; the sign-in screens come from Clerk's separate UI bundle.
+    const base = `https://${conf.frontend_api}/npm`;
+    await loadScript(`${base}/@clerk/ui@${conf.clerk_ui_version}/dist/ui.browser.js`, {});
+    await loadScript(`${base}/@clerk/clerk-js@${conf.clerk_js_version}/dist/clerk.browser.js`,
       { "data-clerk-publishable-key": conf.publishable_key });
-    await window.Clerk.load();
+    await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
     if (!window.Clerk.user) {
       const box = el("div");
       showGate(box);
