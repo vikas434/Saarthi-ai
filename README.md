@@ -2,7 +2,7 @@
 
 Practise customer conversations with an AI customer. A coach comments on each reply. At the end the customer answers a survey, and you get a scorecard for every quality marker: SQS, tNPS, ProSat, checklists, and any marker you add.
 
-Status: local prototype.
+Status: staging demo at https://saarthi-staging.onrender.com (sign-in required). See [docs/deploy.md](docs/deploy.md) and [docs/demo.md](docs/demo.md).
 
 ![A practice call with live coach notes, real model](docs/screenshots/real-call.jpg)
 
