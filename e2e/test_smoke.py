@@ -272,3 +272,20 @@ def test_dashboard_shows_focus_charts_and_team(page: Page) -> None:
     page.click("#save-focus")
     expect(page.locator("#focus-charts .chart")).to_have_count(3)
     expect(page.locator("#team-table")).to_contain_text("admin")
+
+
+def test_practice_tab_returns_to_the_customer_list(page: Page) -> None:
+    _sign_in(page, "agent@example.com")
+    page.evaluate("document.getElementById('hands-free').checked = false")
+    page.locator("#scenarios button", has_text="Start call").first.click()
+    page.uncheck("#speak")
+    _say(page, "Hi Meera, how do you keep your books today?", 1)
+    page.click('nav button[data-tab="practice"]')
+    expect(page.locator("#call")).to_be_visible()  # a call in progress stays open
+    page.click("#end")
+    expect(page.locator("#report .banner")).to_be_visible()
+    page.click('nav button[data-tab="history"]')
+    expect(page.locator("#sessions th").last).to_have_text("Score")
+    page.click('nav button[data-tab="practice"]')
+    expect(page.locator("#pick")).to_be_visible()
+    expect(page.locator("#report")).to_be_hidden()

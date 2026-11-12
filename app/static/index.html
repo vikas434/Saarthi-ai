@@ -323,7 +323,17 @@ function fail(err) {
 function clearError() { $("error").classList.add("hidden"); }
 
 // Tabs
-document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+document.querySelectorAll("nav button").forEach((b) => b.addEventListener("click", () => {
+  if (b.dataset.tab === "practice") showCustomerList();
+  showTab(b.dataset.tab);
+}));
+// The Practice tab opens on the customer list, unless a call is in progress.
+function showCustomerList() {
+  if (!$("call").classList.contains("hidden")) return;
+  $("report").classList.add("hidden"); $("tutor").classList.add("hidden");
+  window.SaarthiVoice?.stopSpeaking();
+  $("pick").classList.remove("hidden");
+}
 function showTab(name) {
   clearError();
   document.querySelectorAll("nav button").forEach((b) => b.toggleAttribute("aria-current", false));
@@ -567,7 +577,7 @@ async function loadHistory() {
     const bar = el("div", { className: "bar" }); const fill = el("i"); fill.style.width = ((b.average || 0) * 20) + "%"; bar.append(fill);
     p.append(el("div", { textContent: `${b.name}: ${b.average == null ? "–" : b.average + " / 5"}` }), bar);
   }
-  const t = $("sessions"); t.replaceChildren(el("tr", {}, ...["When", "Agent", "Customer scenario", "SQS"].map((h) => el("th", { textContent: h }))));
+  const t = $("sessions"); t.replaceChildren(el("tr", {}, ...["When", "Agent", "Customer scenario", "Score"].map((h) => el("th", { textContent: h }))));
   for (const s of rows) {
     const tutorRow = s.kind === "tutor";
     const result = tutorRow ? `Tutor quiz ${s.tutor_score ?? "not finished"}` : s.score == null ? "not scored" : s.score + "%";
