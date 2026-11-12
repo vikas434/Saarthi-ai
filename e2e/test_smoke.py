@@ -52,6 +52,8 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
         "LLM_BASE_URL": "",
         "CLERK_SECRET_KEY": "",
         "CLERK_PUBLISHABLE_KEY": "",
+        "ELEVENLABS_API_KEY": "",
+        "SLACK_WEBHOOK_URL": "",
         "AUTH_DEV_BYPASS": "1",
         "TEACHER_EMAIL": "admin@example.com",
         "STUDENT_EMAILS": "agent@example.com",
@@ -116,6 +118,7 @@ def test_agent_does_not_see_setup(page: Page) -> None:
     _sign_in(page, "agent@example.com")
     expect(page.locator("#who")).to_contain_text("agent@example.com · agent")
     expect(page.locator('nav button[data-tab="setup"]')).to_be_hidden()
+    expect(page.locator('nav button[data-tab="insights"]')).to_be_hidden()
 
 
 def test_offline_call_reaches_the_scorecard_and_tabs_open(page: Page) -> None:
@@ -354,3 +357,27 @@ def test_picking_a_persona_renames_the_customer_everywhere(page: Page) -> None:
     expect(page.locator("#rp-brief")).not_to_have_value(re.compile("Sanjay"))
     expect(page.locator("#rp-brief")).to_have_value(re.compile("Meera"))
     expect(page.locator("#rp-voice")).to_have_value("female")
+
+
+def test_admin_insights_show_adoption_health_and_alerts(page: Page) -> None:
+    _sign_in(page, "agent@example.com")
+    page.evaluate("document.getElementById('hands-free').checked = false")
+    page.locator("#scenarios button", has_text="Start call").first.click()
+    page.uncheck("#speak")
+    _say(page, "Hi Meera, what made you look at new tools?", 1)
+    page.click("#end")
+    expect(page.locator("#report .banner")).to_be_visible()
+    page.click("#sign-out")
+    _sign_in(page, "admin@example.com")
+    page.click('nav button[data-tab="insights"]')
+    expect(page.locator("#insights-alerts")).to_be_visible()
+    funnel = page.locator("#insights-funnel")
+    expect(funnel).to_contain_text("Finished a call")
+    expect(page.locator("#insights")).to_contain_text("Service health")
+    expect(page.locator("#insights")).not_to_contain_text("agent@example.com")
+    funnel.locator("button", has_text="Table").click()
+    expect(funnel.locator("table")).to_be_visible()
+    page.locator("#insights button", has_text="Last 30 days").click()
+    expect(page.locator("#insights button", has_text="Last 30 days")).to_have_attribute(
+        "aria-selected", "true"
+    )

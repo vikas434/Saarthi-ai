@@ -97,6 +97,12 @@
   @keyframes spin { to { transform:rotate(360deg); } }
   @media (prefers-reduced-motion: reduce) { #scoring .spinner { animation:none; } }
   .verdict { margin-left:auto; font-size:11px; padding:2px 10px; border-radius:999px; }
+  .alert { margin-bottom:10px; border-left:4px solid var(--mixed); } .alert p { margin:4px 0 0; }
+  .alert.critical { border-left-color:var(--bad); } .alert.critical b { color:var(--bad); }
+  .alert.warning b { color:var(--mixed); } .alert.ok { border-left-color:var(--good); margin-bottom:16px; } .alert.ok b { color:var(--good); }
+  .hbars { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+  .hbar-label { display:flex; justify-content:space-between; gap:8px; font-size:14px; }
+  .hbar .bar { margin:4px 0 0; } .hbar .bar > i { border-radius:0 4px 4px 0; }
   .verdict.good { background:#e8f7ee; color:var(--good); } .verdict.watch { background:#fff4e0; color:var(--mixed); }
 </style>
 </head>
@@ -107,6 +113,7 @@
     <button data-tab="practice" aria-current="page">Practice</button>
     <button data-tab="build">Build</button>
     <button data-tab="history">Dashboard</button>
+    <button data-tab="insights" class="hidden">Insights</button>
     <button data-tab="setup" class="hidden">Setup</button>
   </nav>
   <span id="mode"></span>
@@ -181,6 +188,8 @@
     <details class="card" id="progress-box"><summary>All markers and behaviours</summary><div id="progress"></div></details>
   </section>
 
+  <section id="tab-insights" class="hidden"><div id="insights"></div></section>
+
   <section id="tab-setup" class="hidden">
     <h2>Setup</h2>
     <p class="lede">What the customer and coach know. The coach checks every product claim against these facts.</p>
@@ -229,6 +238,7 @@
 <script src="/builder.js"></script>
 <script src="/tutor.js"></script>
 <script src="/dashboard.js"></script>
+<script src="/insights.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => {
@@ -348,9 +358,10 @@ function showTab(name) {
   clearError();
   document.querySelectorAll("nav button").forEach((b) => b.toggleAttribute("aria-current", false));
   document.querySelector(`nav button[data-tab="${name}"]`).setAttribute("aria-current", "page");
-  for (const t of ["practice", "build", "history", "setup"]) $("tab-" + t).classList.toggle("hidden", t !== name);
+  for (const t of ["practice", "build", "history", "insights", "setup"]) $("tab-" + t).classList.toggle("hidden", t !== name);
   if (name === "build") loadBuilder().catch(fail);
   if (name === "history") loadHistory().catch(fail);
+  if (name === "insights") loadInsights().catch(fail);
 }
 
 // Setup + scenario list
@@ -650,7 +661,9 @@ async function boot() {
   if (!(await signIn())) return;
   const me = await api("/api/me");
   $("who-email").textContent = `${me.email} · ${me.role}`; $("who").classList.remove("hidden");
-  document.querySelector('nav button[data-tab="setup"]').classList.toggle("hidden", me.role !== "admin");
+  for (const tab of ["insights", "setup"]) {
+    document.querySelector(`nav button[data-tab="${tab}"]`).classList.toggle("hidden", me.role !== "admin");
+  }
   document.querySelector("nav").classList.remove("hidden");
   document.querySelector("main").classList.remove("hidden");
   await loadConfig();

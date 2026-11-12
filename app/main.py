@@ -102,7 +102,7 @@ def index() -> FileResponse:
 
 
 # Scripts next to the single page: voice for calls, and the scorecard view.
-PAGE_SCRIPTS = frozenset({"voice", "report", "builder", "tutor", "dashboard"})
+PAGE_SCRIPTS = frozenset({"voice", "report", "builder", "tutor", "dashboard", "insights"})
 
 
 @app.get("/{name}.js")
