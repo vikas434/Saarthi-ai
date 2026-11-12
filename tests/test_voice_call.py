@@ -60,3 +60,8 @@ def test_voice_script_is_served_without_sign_in(anon):
     assert res.status_code == 200
     assert res.headers["content-type"].startswith("text/javascript")
     assert "SaarthiVoice" in res.text
+
+
+def test_report_script_is_served_and_other_names_are_not(anon):
+    assert "showReport" in anon.get("/report.js").text
+    assert anon.get("/secrets.js").status_code == 404

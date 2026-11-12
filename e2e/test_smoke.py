@@ -130,8 +130,13 @@ def test_offline_call_reaches_the_scorecard_and_tabs_open(page: Page) -> None:
     expect(page.locator("#coach .note")).to_have_count(2)
 
     page.click("#end")
-    expect(page.locator("#report h2", has_text="Scorecard")).to_be_visible()
+    expect(page.locator("#report h2", has_text="Call complete")).to_be_visible()
     expect(page.locator("#report .tile")).to_have_count(4)
+    expect(page.locator("#report .banner")).to_contain_text("Your score was")
+    page.click("#report-tab-analytics")
+    expect(page.locator("#report .metric", has_text="Questions asked")).to_be_visible()
+    expect(page.locator("#report .tile").first).to_be_hidden()
+    page.click("#report-tab-coaching")
 
     page.click('nav button[data-tab="history"]')
     expect(page.locator("#tab-history")).to_be_visible()
@@ -190,6 +195,6 @@ def test_hands_free_call_listens_sends_and_listens_again(base_url: str) -> None:
         expect(page.locator("#mic")).to_have_text("■ Done")
         assert page.evaluate("window.__listens") == 3
         page.click("#end")
-        expect(page.locator("#report h2", has_text="Scorecard")).to_be_visible()
+        expect(page.locator("#report h2", has_text="Call complete")).to_be_visible()
         expect(page.locator("#clock")).to_have_text("")
         browser.close()

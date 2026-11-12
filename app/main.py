@@ -114,11 +114,16 @@ def index() -> FileResponse:
     return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
 
-@app.get("/voice.js")
-def voice_js() -> FileResponse:
-    """Voice for practice calls (ring, customer voice, hands-free listening)."""
+# Scripts next to the single page: voice for calls, and the scorecard view.
+PAGE_SCRIPTS = frozenset({"voice", "report"})
+
+
+@app.get("/{name}.js")
+def page_script(name: str) -> FileResponse:
+    if name not in PAGE_SCRIPTS:
+        raise HTTPException(status_code=404, detail="Not found")
     return FileResponse(
-        STATIC / "voice.js",
+        STATIC / f"{name}.js",
         media_type="text/javascript",
         headers={"Cache-Control": "no-cache"},
     )

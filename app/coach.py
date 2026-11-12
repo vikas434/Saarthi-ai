@@ -8,12 +8,12 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import copy_context
 
-from app import offline, schemas, store, usage
+from app import delivery, offline, schemas, store, usage
 from app.config import CONFIG_DIR, MAX_AGENT_TURNS
 from app.llm import LLM, ModelReplyError, get_llm, parse_json
 
 logger = logging.getLogger(__name__)
-PROMPT_VERSION = "saarthi@3"
+PROMPT_VERSION = "saarthi@4"
 PARSE_ATTEMPTS = 2  # one retry when the model's reply can't be used
 TURN_MAX_TOKENS = 4000  # thinking and the JSON reply share this budget
 REPORT_MAX_TOKENS = 12000
@@ -147,6 +147,34 @@ def _transcript(turns: list[dict]) -> str:
             lines.append(f"Agent: {t['agent_text']}")
         lines.append(f"Customer: {t['customer_text']}")
     return "\n".join(lines)
+
+
+def _numbered(agent_turns: list[str]) -> str:
+    return "\n".join(f"{i}. {text}" for i, text in enumerate(agent_turns, start=1))
+
+
+def _line_tips(data: dict, agent_turns: list[str]) -> list[dict]:
+    """Model tips joined to the reply they improve; tips for replies that don't exist are dropped."""
+    out = []
+    for tip in data.get("line_tips", []):
+        if not isinstance(tip, dict):
+            continue
+        n, better = tip.get("reply"), str(tip.get("better", "")).strip()
+        if isinstance(n, int) and 1 <= n <= len(agent_turns) and better:
+            out.append({"reply": n, "said": agent_turns[n - 1], "better": better})
+    return sorted(out, key=lambda t: t["reply"])
+
+
+def overall_score(markers: list[dict]) -> int | None:
+    """One number for the call: the mean of every marker that was scored, each as 0 to 100."""
+    values = []
+    for m in markers:
+        if m["type"] == "survey":
+            if m.get("score") is not None and m["max"] > m["min"]:
+                values.append(100 * (m["score"] - m["min"]) / (m["max"] - m["min"]))
+        elif m.get("percent") is not None:
+            values.append(m["percent"])
+    return round(sum(values) / len(values)) if values else None
 
 
 def _turn_system(scenario: dict, rubric: dict, product: str) -> str:
@@ -306,7 +334,14 @@ Reply with exactly this JSON shape:
  "strengths": ["2 or 3 short points"],
  "growth": ["2 or 3 short points"],
  "summary": "two sentences on how the call went",
- "next_drill": "one specific thing to practise in the next call"}}
+ "next_drill": "one specific thing to practise in the next call",
+ "follow_up_questions": ["3 questions this customer is likely to ask next time; prepare answers"],
+ "line_tips": [{{"reply": <number of the agent reply>,
+                 "better": "the better reply itself, word for word as the agent would say it"}}]}}
+Give a line tip for each agent reply that could clearly be better (at most 8), numbered as in
+the list of agent replies. "better" is a rewritten reply in the agent's own voice (first person,
+one to three short sentences), never advice about what to do. It must stay true to the
+product facts.
 Include every behaviour id and every checklist item id once. Escape double quotes in strings."""
 
 
@@ -351,7 +386,10 @@ def _coach_data_inner(llm, session, scenario, behaviors, items, agent_turns) -> 
             data = _ask(
                 llm,
                 system=_report_system(behaviors, items, load_product(), scenario),
-                user=f"Transcript:\n{_transcript(session['turns'])}\n\nJSON:",
+                user=(
+                    f"Transcript:\n{_transcript(session['turns'])}\n\n"
+                    f"Agent replies, numbered:\n{_numbered(agent_turns)}\n\nJSON:"
+                ),
                 max_tokens=REPORT_MAX_TOKENS,
                 effort=REPORT_EFFORT,
                 schema=schemas.report_schema(
@@ -499,6 +537,10 @@ def build_report(session: dict) -> dict:
         "growth": [str(x) for x in data.get("growth", [])][:3],
         "summary": str(data.get("summary", "")),
         "next_drill": str(data.get("next_drill", "")),
+        "overall": overall_score(out),
+        "follow_up_questions": [str(q) for q in data.get("follow_up_questions", [])][:3],
+        "lines": _line_tips(data, agent_turns),
+        "analytics": delivery.analyze(session["turns"]),
         "scored_by": source,
         "fallback": llm is not None and "offline" in (source, survey_source),
         "prompt_version": PROMPT_VERSION,

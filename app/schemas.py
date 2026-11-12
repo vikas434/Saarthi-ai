@@ -60,6 +60,11 @@ def report_schema(behavior_ids: list[str], checklist_keys: list[str]) -> dict:
             "growth": {"type": "array", "items": _STR},
             "summary": _STR,
             "next_drill": _STR,
+            "follow_up_questions": {"type": "array", "items": _STR},
+            "line_tips": {
+                "type": "array",
+                "items": _obj({"reply": {"type": "integer"}, "better": _STR}),
+            },
         }
     )
 

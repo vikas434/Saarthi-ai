@@ -11,7 +11,7 @@ Practise customer calls with an AI customer. A coach comments on every reply, an
 1. **Pick a customer.** Each scenario has a short brief for the agent; the customer's real concerns stay hidden.
 2. **Talk.** Hands-free by default in Chrome: the phone rings, the customer speaks first, and Saarthi listens after each line; pause to send. Typing always works. Each call has a time limit (6 minutes unless the roleplay sets one) and ends itself when time runs out.
 3. **Get coached live.** After each reply the coach names one behaviour (good, mixed or improve), quotes you, and suggests a better line. Product claims are checked against the product facts.
-4. **End the call.** The coach scores every behaviour and checklist item while the customer answers the survey, in parallel.
+4. **End the call.** The coach scores every behaviour and checklist item while the customer answers the survey, in parallel. The scorecard opens with one overall score, then two tabs: **Coaching** (summary, next drill, every marker, questions to prepare for, and the transcript with a better line under each reply that needed one) and **Analytics** (filler and weak words, sentence starters, reply length, talk time, longest reply, questions asked, and pace for spoken replies; worked out in code, no model cost).
 5. **Track progress.** History shows every call, the trend per marker and the average per behaviour.
 
 ![Scorecard by marker](docs/screenshots/real-scorecard.jpg)
@@ -92,12 +92,14 @@ app/
   schemas.py       JSON schemas the model must answer in
   llm.py           model providers (Anthropic, OpenAI-compatible)
   offline.py       scripted customer and rule-of-thumb scoring
+  delivery.py      call analytics from the transcript: filler words, talk time, pace
   store.py, db.py  storage on SQLite or Postgres; Alembic migrations in migrations/
   usage.py         tokens and cost per model call
   limits.py        spend cap, calls per day, rate limit
   web_security.py  security headers, HTTPS redirect
   static/index.html  the whole front end
   static/voice.js    ring, customer voice, hands-free listening (browser speech, no keys)
+  static/report.js   the scorecard: banner, Coaching and Analytics tabs
 config/            markers, scenarios, sample product facts, model prices
 evals/             strong and weak agent scripts for python -m app.evals
 tests/, e2e/       unit tests and the browser smoke test

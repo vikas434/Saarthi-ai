@@ -42,7 +42,7 @@ Each phase ships through staging (checks, evals, commit, push, CI green, auto-de
 - Typing stays available; Chrome only for voice (other browsers fall back to chat with a note).
 - Records speaking time per reply (for pace and talk-time analytics later).
 
-### M2 Richer report
+### M2 Richer report (done 2026-11-12)
 - Overall score %, summary, strengths and growth areas (exists), **follow-up questions to prepare**.
 - **Delivery analytics** computed in code from the transcript and timings: filler words, weak words, repeated sentence starters, conciseness, talk-time ratio, longest monologue, questions asked, pace (words per minute). Works offline.
 - **Line-by-line "say it better"** on the transcript, produced in the same scorecard model call (no extra call).

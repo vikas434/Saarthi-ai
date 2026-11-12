@@ -117,6 +117,14 @@ def behavior_scores(agent_turns: list[str]) -> dict[str, int | None]:
     }
 
 
+# Questions most customers ask before they buy; the model writes call-specific ones instead.
+OFFLINE_FOLLOW_UPS = (
+    "What exactly does it cost each month, and what is included?",
+    "How long does it take to get set up, and who helps me?",
+    "What happens if it doesn't work for me? Can I cancel?",
+)
+
+
 def coach_report(
     behaviors: list[dict], checklist_items: list[dict], agent_turns: list[str]
 ) -> dict:
@@ -159,6 +167,8 @@ def coach_report(
         "growth": ["Connect a model key for detailed, quote-level coaching"],
         "summary": "Offline demo scoring from simple signals (questions, empathy words, next steps).",
         "next_drill": "Open with two discovery questions before any product detail.",
+        "follow_up_questions": list(OFFLINE_FOLLOW_UPS),
+        "line_tips": [],
     }
 
 

@@ -82,6 +82,10 @@ def main() -> int:
     print(f"strong agent missed critical checklist items: {strong_missed}")
     _check(results, "weak agent misses a critical item", bool(weak_missed))
     _check(results, "strong agent misses no critical item", not strong_missed)
+    print(f"overall  strong {strong['overall']}%   weak {weak['overall']}%")
+    _check(results, "overall score strong above weak", strong["overall"] > weak["overall"])
+    _check(results, "follow-up questions to prepare", len(weak["follow_up_questions"]) >= 1)
+    _check(results, "delivery analytics present", bool(weak["analytics"]["metrics"]))
     if coach_mode() != "offline":
         for name, report in (("strong", strong), ("weak", weak)):
             clean = report["turn_fallbacks"] == 0 and not report["fallback"]
@@ -93,6 +97,10 @@ def main() -> int:
             "weak agent accuracy 2 or lower",
             accuracy["score"] is not None and accuracy["score"] <= 2,
         )
+        print(f"weak agent line tips: {len(weak['lines'])}")
+        for tip in weak["lines"][:2]:
+            print(f"  reply {tip['reply']}: {tip['better']}")
+        _check(results, "weak agent gets better lines", len(weak["lines"]) >= 1)
     ok = all(passed for _, passed in results)
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
