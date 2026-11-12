@@ -7,10 +7,10 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
-from app import auth, coach, db, limits, roleplays, store, usage
+from app import auth, coach, db, limits, roleplays, store, usage, voice
 from app.auth import AuthError, Principal
 from app.dashboard_routes import router as dashboard_router
 from app.deps import Admin, User
@@ -129,6 +129,7 @@ def config(user: User) -> dict:
         "mode": coach.mode(),
         "role": user.role,
         "open_signup": auth.open_signup(),
+        "voice": "elevenlabs" if voice.available() else "browser",
         "calls_per_day": limits.calls_per_day(),
         "calls_left": limits.calls_left(user.user_id),
         "rubric": coach.load_rubric(),
@@ -261,6 +262,23 @@ def sessions(user: User) -> list[dict]:
         }
         for s in store.list_sessions(_owner_filter(user))
     ]
+
+
+@app.get("/api/sessions/{sid}/voice/{idx}")
+def customer_voice(sid: str, idx: int, user: User) -> Response:
+    """The customer's line at this turn as human-voice MP3; 204 means use the browser voice."""
+    session = _session_or_404(sid, user)
+    turn = next((t for t in session["turns"] if t["idx"] == idx), None)
+    scenario = coach.get_scenario(session["scenario_id"])
+    if turn is None or scenario is None:
+        raise HTTPException(status_code=404, detail="Turn not found")
+    with usage.attribute(session_id=sid, user_id=user.user_id):
+        audio = voice.speak(turn["customer_text"], scenario["customer"])
+    if audio is None:
+        return Response(status_code=204)
+    return Response(
+        audio, media_type="audio/mpeg", headers={"Cache-Control": "private, max-age=3600"}
+    )
 
 
 @app.get("/api/sessions/{sid}")

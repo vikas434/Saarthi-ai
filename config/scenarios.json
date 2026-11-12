@@ -7,6 +7,7 @@
     "customer": {
       "name": "Meera",
       "role": "Boutique owner",
+      "voice": "female",
       "persona": "Owner of a clothing boutique with 4 staff. Practical, busy, polite but guarded about money.",
       "mood": "Curious but cautious",
       "situation": "Spends every Sunday evening on Excel. Her accountant complained about messy records last quarter.",
@@ -24,6 +25,7 @@
     "customer": {
       "name": "Rahul",
       "role": "Cafe owner",
+      "voice": "male",
       "persona": "Runs a cafe. Direct, impatient, feels he was oversold.",
       "mood": "Frustrated",
       "situation": "His reports looked wrong because cash sales were never entered. He thinks the product is broken.",
@@ -41,6 +43,7 @@
     "customer": {
       "name": "Ananya",
       "role": "Freelance designer",
+      "voice": "female",
       "persona": "Freelance designer, organised, asks precise questions, values honesty.",
       "mood": "Friendly and analytical",
       "situation": "Sends about 15 invoices a month and wants GST reports without hiring an accountant full time.",

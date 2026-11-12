@@ -10,7 +10,7 @@ Practise customer calls with an AI customer. A coach comments on every reply, an
 
 1. **Pick a customer.** Each scenario has a short brief for the agent; the customer's real concerns stay hidden. Press **Learn first** for a short lesson on the product facts this call needs and three check questions (it counts as one of the day's calls).
    **Or build your own** in the Build tab: describe the call and the AI drafts it, or start from a template (cold call, inbound discovery, upset customer, renewal, support escalation). Edit the persona, context, goals (scored on the scorecard), hidden objections and time limit. Your roleplays are private; the admin can publish one to everyone.
-2. **Talk.** Hands-free by default in Chrome: the phone rings, the customer speaks first, and Saarthi listens after each line; pause to send. Typing always works. Each call has a time limit (6 minutes unless the roleplay sets one) and ends itself when time runs out.
+2. **Talk.** Hands-free by default in Chrome: the phone rings, the customer speaks first, and Saarthi listens after each line; pause to send. Typing always works. Each call has a time limit (6 minutes unless the roleplay sets one) and ends itself when time runs out. The customer speaks with a natural human voice (ElevenLabs) while the month's voice budget lasts, then with the browser's voice.
 3. **Get coached live.** After each reply the coach names one behaviour (good, mixed or improve), quotes you, and suggests a better line. Product claims are checked against the product facts.
 4. **End the call.** The coach scores every behaviour and checklist item while the customer answers the survey, in parallel. The scorecard opens with one overall score, then two tabs: **Coaching** (summary, next drill, every marker, questions to prepare for, and the transcript with a better line under each reply that needed one) and **Analytics** (filler and weak words, sentence starters, reply length, talk time, longest reply, questions asked, and pace for spoken replies; worked out in code, no model cost).
 5. **Track progress.** The Dashboard shows your practice streak, calls this week, two or three plain insights, and up to four focus metrics you choose (overall score, filler words, pace, talk time, questions, any marker) over time against a target. The admin also sees a team table: each person's calls, average, and first-to-latest score. Every call is listed below.
@@ -68,6 +68,7 @@ All configuration is environment variables; `.env.example` lists every one.
 | `ANTHROPIC_API_KEY`, `LLM_MODEL`, `LLM_EFFORT` | Model for customer, coach and survey (default `claude-haiku-5-5`, effort `low`; the scorecard always uses `medium`) |
 | `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_BASE_URL` | `openai_compatible` for a company gateway |
 | `DATABASE_URL` | Postgres URL; empty means SQLite at `SAARTHI_DB` |
+| `ELEVENLABS_API_KEY`, `ELEVENLABS_MONTHLY_CHAR_CAP` | Human voice for the customer (ElevenLabs Flash v2.5) and its monthly character budget; without a key, or past the budget, the browser's voice is used |
 | `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_AUTHORIZED_PARTIES` | Clerk application keys and the site origin allowed to use them |
 | `TEACHER_EMAIL`, `STUDENT_EMAILS` | The admin and the allow-listed agents |
 | `OPEN_SIGNUP` | `1` lets anyone who signs in practise as an agent |
@@ -99,6 +100,7 @@ app/
   llm.py           model providers (Anthropic, OpenAI-compatible)
   offline.py       scripted customer and rule-of-thumb scoring
   delivery.py      call analytics from the transcript: filler words, talk time, pace
+  voice.py         the customer's human voice (ElevenLabs), monthly cap, browser fallback
   store.py, db.py  storage on SQLite or Postgres; Alembic migrations in migrations/
   usage.py         tokens and cost per model call
   limits.py        spend cap, calls per day, rate limit
@@ -109,7 +111,7 @@ app/
   static/builder.js  the Build tab: describe or template, edit, save, publish
   static/tutor.js    Learn first: lesson, questions, result
   static/dashboard.js  the Dashboard tab: stats, insights, focus charts, team table
-config/            markers, scenarios, roleplay templates, personas, sample product facts, model prices
+config/            markers, scenarios, roleplay templates, personas, voices, sample product facts, model prices
 evals/             strong and weak agent scripts for python -m app.evals
 tests/, e2e/       unit tests and the browser smoke test
 ```

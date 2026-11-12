@@ -83,9 +83,28 @@
     return { stop, cancel() { cancelled = true; stop(); } };
   }
 
+  // Human voice: play MP3 bytes from the server; resolves when done. Falls back to say(text)
+  // when the server sends no audio (204), on any error, or if playback is blocked.
+  let player = null;
+  async function sayHuman(fetchAudio, text) {
+    try {
+      const res = await fetchAudio();
+      if (res.status !== 200) return say(text);
+      const url = URL.createObjectURL(await res.blob());
+      stopSpeaking();
+      player = new Audio(url);
+      await new Promise((resolve) => {
+        const done = () => { URL.revokeObjectURL(url); resolve(); };
+        player.onended = done; player.onerror = done; player.onpause = done;
+        player.play().catch(() => { URL.revokeObjectURL(url); say(text).then(resolve); });
+      });
+    } catch { await say(text); }
+  }
+  function stopAll() { window.speechSynthesis?.cancel(); if (player) { player.pause(); player = null; } }
+
   window.SaarthiVoice = {
     canListen: Boolean(Recognition),
     canSpeak: Boolean(window.speechSynthesis),
-    unlockAudio, ring, say, stopSpeaking, listen,
+    unlockAudio, ring, say, sayHuman, stopSpeaking: stopAll, listen,
   };
 })();

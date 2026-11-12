@@ -115,7 +115,14 @@ function personaPicker() {
   pick.addEventListener("change", () => {
     const p = builderData.personas[Number(pick.value)];
     if (!p) return;
+    // A new person: their name replaces the old one everywhere the roleplay mentions it.
+    const oldName = $("rp-name").value.trim();
+    if (oldName && oldName !== p.name) {
+      for (const id of ["rp-title", "rp-brief", "rp-situation", "rp-wins", "rp-walks", "rp-opening", "rp-objections"])
+        $(id).value = $(id).value.split(oldName).join(p.name);
+    }
     $("rp-name").value = p.name; $("rp-role").value = p.role || ""; $("rp-mood").value = p.mood || ""; $("rp-persona").value = p.background || "";
+    $("rp-voice").value = p.voice || "";
   });
   return pick;
 }
@@ -124,6 +131,9 @@ function renderEditor(body, id) {
   const c = body.customer || {};
   const difficulty = el("select", { id: "rp-difficulty" });
   for (const d of ["Easy", "Medium", "Hard"]) difficulty.append(el("option", { value: d, textContent: d, selected: d === (body.difficulty || "Medium") }));
+  const voiceSel = el("select", { id: "rp-voice" });
+  for (const [v, label] of [["", "Any"], ["female", "Female"], ["male", "Male"]])
+    voiceSel.append(el("option", { value: v, textContent: label, selected: v === (c.voice || "") }));
   const goals = el("div", { id: "rp-goals" }, ...(body.goals || []).map(goalRow));
   const addGoal = el("button", { className: "ghost", type: "button", textContent: "+ Add goal" });
   addGoal.addEventListener("click", () => { if (goals.children.length < MAX_GOALS) goals.append(goalRow()); });
@@ -144,7 +154,8 @@ function renderEditor(body, id) {
     section("Persona", "Who the AI plays.", el("div", { style: "margin-top:10px" }, personaPicker()),
       el("div", { className: "two" }, field("Name", textInput("rp-name", c.name)), field("Role", textInput("rp-role", c.role))),
       el("div", { className: "two" }, field("Temperament", textInput("rp-mood", c.mood, { placeholder: "Skeptical, rushed, friendly…" })),
-        el("div", {}, el("label", {}, el("input", { type: "checkbox", id: "rp-save-persona" }), " Save this persona to my library"))),
+        field("Voice", voiceSel)),
+      el("label", {}, el("input", { type: "checkbox", id: "rp-save-persona" }), " Save this persona to my library"),
       field("Background", textArea("rp-persona", c.persona, 2))),
     section("Context", "Directions for the AI customer: their situation, and what moves them.",
       field("Situation", textArea("rp-situation", c.situation, 3)),
@@ -170,7 +181,7 @@ function collectRoleplay() {
   return {
     title: $("rp-title").value.trim(), difficulty: $("rp-difficulty").value, public_brief: $("rp-brief").value.trim(),
     customer: {
-      name: $("rp-name").value.trim(), role: $("rp-role").value.trim(), mood: $("rp-mood").value.trim(),
+      name: $("rp-name").value.trim(), role: $("rp-role").value.trim(), mood: $("rp-mood").value.trim(), voice: $("rp-voice").value,
       persona: $("rp-persona").value.trim(), situation: $("rp-situation").value.trim(),
       wins_if: $("rp-wins").value.trim(), walks_away_if: $("rp-walks").value.trim(),
       hidden_objections: $("rp-objections").value.split("\n").map((x) => x.trim()).filter(Boolean),
@@ -185,7 +196,7 @@ async function saveRoleplay(id, practise) {
   try {
     if ($("rp-save-persona").checked) {
       const c = body.customer;
-      await api("/api/personas", { method: "POST", body: JSON.stringify({ name: c.name, role: c.role, mood: c.mood, background: c.persona }) });
+      await api("/api/personas", { method: "POST", body: JSON.stringify({ name: c.name, role: c.role, mood: c.mood, voice: c.voice, background: c.persona }) });
     }
     const saved = await api(id ? `/api/roleplays/${id}` : "/api/roleplays",
       { method: id ? "PUT" : "POST", body: JSON.stringify(body) });

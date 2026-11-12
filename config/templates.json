@@ -7,6 +7,7 @@
     "customer": {
       "name": "Sanjay",
       "role": "Hardware store owner",
+      "voice": "male",
       "persona": "Runs a busy family hardware store. Practical, impatient with sales calls, respects people who get to the point.",
       "mood": "Rushed",
       "situation": "Was serving a customer when the phone rang. Has had three sales calls this week already.",
@@ -30,6 +31,7 @@
     "customer": {
       "name": "Neha",
       "role": "Startup founder",
+      "voice": "female",
       "persona": "Founder of a five-person design studio. Friendly, organised, compares options carefully.",
       "mood": "Curious",
       "situation": "Her team tracks invoices in a shared spreadsheet and two clients paid late last month.",
@@ -53,6 +55,7 @@
     "customer": {
       "name": "Arjun",
       "role": "Restaurant owner",
+      "voice": "male",
       "persona": "Runs two restaurants. Direct, loud when stressed, fair once he feels heard.",
       "mood": "Frustrated",
       "situation": "His month-end report did not match his bank and his accountant is waiting.",
@@ -76,6 +79,7 @@
     "customer": {
       "name": "Farah",
       "role": "Finance manager",
+      "voice": "female",
       "persona": "Finance manager at a 30-person trading company. Calm, numbers-driven, asks pointed questions.",
       "mood": "Guarded",
       "situation": "Her CFO asked her to cut software costs by 15 percent this year.",
@@ -99,6 +103,7 @@
     "customer": {
       "name": "Mr Iyer",
       "role": "Chartered accountant",
+      "voice": "male",
       "persona": "Senior accountant who manages books for twelve small clients. Precise, formal, short on patience.",
       "mood": "Annoyed",
       "situation": "Bank feeds for two of his clients stopped syncing a week ago and each ticket got a different answer.",

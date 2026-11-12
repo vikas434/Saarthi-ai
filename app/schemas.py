@@ -105,6 +105,7 @@ def scenario_schema() -> dict:
         {
             "name": _STR,
             "role": _STR,
+            "voice": {"type": "string", "enum": ["female", "male"]},
             "persona": _STR,
             "mood": _STR,
             "situation": _STR,

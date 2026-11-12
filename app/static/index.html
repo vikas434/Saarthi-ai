@@ -91,6 +91,11 @@
   .chart .tip { position:absolute; pointer-events:none; background:#1a1a2e; color:#fff; font-size:12px; padding:4px 8px; border-radius:6px; white-space:nowrap; transform:translate(-50%, -120%); }
   .focus-pick { display:grid; gap:6px; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); margin:10px 0; }
   .up { color:var(--good); font-weight:600; } .down { color:var(--bad); font-weight:600; }
+  #scoring { position:fixed; inset:0; background:rgba(28,27,41,.35); display:flex; align-items:center; justify-content:center; z-index:10; }
+  #scoring .card { max-width:420px; text-align:center; padding:28px; }
+  #scoring .spinner { width:36px; height:36px; margin:0 auto 14px; border:4px solid var(--line); border-top-color:var(--brand); border-radius:50%; animation:spin 0.9s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { #scoring .spinner { animation:none; } }
   .verdict { margin-left:auto; font-size:11px; padding:2px 10px; border-radius:999px; }
   .verdict.good { background:#e8f7ee; color:var(--good); } .verdict.watch { background:#fff4e0; color:var(--mixed); }
 </style>
@@ -108,6 +113,11 @@
   <span id="who" class="hidden"><span id="who-email"></span><button class="ghost" id="sign-out">Sign out</button></span>
 </header>
 <div id="gate" class="hidden"></div>
+<div id="scoring" class="hidden" role="status" aria-live="polite">
+  <div class="card"><div class="spinner"></div><h3>Scoring your call…</h3>
+    <p class="muted" style="margin:0">The coach is scoring every marker while the customer answers the survey. This takes about 15 to 30 seconds.</p>
+    <p class="muted" id="scoring-time" style="margin:10px 0 0"></p></div>
+</div>
 <main class="hidden">
   <p id="error" class="error hidden" role="alert"></p>
   <div id="welcome" class="card welcome hidden" role="note">
@@ -453,7 +463,14 @@ function listenForReply() {
 $("mic").addEventListener("click", () => { if (listener) listener.stop(); else listenForReply(); });
 // Typing takes over from listening.
 $("text").addEventListener("keydown", () => stopListening());
-async function customerSpeaks(text) { if ($("speak").checked) await V.say(text); }
+// The customer's line at turn idx: human voice (ElevenLabs) when the server has it, else the browser's.
+let replyCount = 0;
+async function customerSpeaks(text, idx) {
+  if (!$("speak").checked) return;
+  if (cfg.voice !== "elevenlabs" || !session) { await V.say(text); return; }
+  const sid = session.id;
+  await V.sayHuman(async () => fetch(`/api/sessions/${sid}/voice/${idx}`, { headers: await authHeaders() }), text);
+}
 function callOver() { return customerDone || timeUp; }
 function afterCustomer() {
   if (scoring || !session) return;
@@ -523,7 +540,8 @@ async function startCall(scenarioId) {
     setBusy(false); voiceStatus("");
   }
   addMsg("customer", data.customer, data.scenario.customer_name);
-  await customerSpeaks(data.customer);
+  replyCount = 0;
+  await customerSpeaks(data.customer, 0);
   if (session?.id === sid) afterCustomer();
 }
 function setBusy(on) { busy = on; $("send").disabled = on; $("text").disabled = on; $("end").disabled = on; }
@@ -545,7 +563,8 @@ async function sendReply(text, seconds = null) {
       customerDone = true; $("send").disabled = true; $("text").disabled = true; $("mic").disabled = true;
       $("text").placeholder = "The customer has ended the call. Click End call and score.";
     }
-    await customerSpeaks(r.customer);
+    replyCount += 1;
+    await customerSpeaks(r.customer, replyCount);
     if (session?.id === sid) afterCustomer();
   } catch (err) { setBusy(false); fail(err); }
 }
@@ -554,9 +573,16 @@ $("end").addEventListener("click", async () => {
   if (scoring) return;
   scoring = true; stopListening(); V.stopSpeaking(); stopClock(); voiceStatus("");
   clearError(); setBusy(true); $("end").textContent = "Scoring…";
+  const started = Date.now();
+  const tick = () => { $("scoring-time").textContent = `${Math.round((Date.now() - started) / 1000)} seconds`; };
+  tick(); const ticker = setInterval(tick, 1000);
+  $("scoring").classList.remove("hidden");
   try { showReport(await api(`/api/sessions/${session.id}/end`, { method: "POST" })); }
-  catch (err) { scoring = false; fail(err); }
-  finally { setBusy(false); $("mic").disabled = !V.canListen; $("end").textContent = "End call and score"; }
+  catch (err) { scoring = false; fail(err); window.scrollTo(0, 0); }
+  finally {
+    clearInterval(ticker); $("scoring").classList.add("hidden");
+    setBusy(false); $("mic").disabled = !V.canListen; $("end").textContent = "End call and score";
+  }
 });
 
 

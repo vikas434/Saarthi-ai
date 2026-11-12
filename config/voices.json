@@ -1,0 +1,17 @@
+{
+  "about": "ElevenLabs premade voices (usable by any account) for the AI customer. American accent. A roleplay's customer.voice picks female or male; otherwise any voice, chosen by the customer's name.",
+  "model": "eleven_flash_v2_5",
+  "female": {
+    "Sarah": "EXAVITQu4vr4xnSDxMaL",
+    "Laura": "FGY2WhTYpPnrIDTdsKH5",
+    "Matilda": "XrExE9yKIg1WjnnlVkGX",
+    "Jessica": "cgSgspJ2msm6clMCkdW9",
+    "Bella": "hpp4J3VqNfWAUOO0d1Us"
+  },
+  "male": {
+    "Roger": "CwhRBWXzGAHq8TQ4Fs17",
+    "Will": "bIHbv24MWmeRgasZH58o",
+    "Eric": "cjVigY5qzO86Huf0OWal",
+    "Chris": "iP95p4xoKVk53GoZ742B"
+  }
+}

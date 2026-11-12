@@ -47,6 +47,7 @@ class Goal(BaseModel):
 class Customer(BaseModel):
     name: str = Field(min_length=1, max_length=40)
     role: str = Field(default="", max_length=80)
+    voice: Literal["", "female", "male"] = ""
     persona: str = Field(default="", max_length=1000)
     mood: str = Field(default="", max_length=60)
     situation: str = Field(default="", max_length=1500)
@@ -68,6 +69,7 @@ class RoleplayIn(BaseModel):
 class PersonaIn(BaseModel):
     name: str = Field(min_length=1, max_length=40)
     role: str = Field(default="", max_length=80)
+    voice: Literal["", "female", "male"] = ""
     mood: str = Field(default="", max_length=60)
     background: str = Field(default="", max_length=1000)
 
@@ -186,7 +188,7 @@ def _basic_draft(description: str) -> dict:
 
 DRAFT_SYSTEM = """Draft a sales practice roleplay as JSON only, with keys: title (under 60
 characters), difficulty (Easy|Medium|Hard), public_brief (what the agent is told, 1-2 sentences),
-customer {name, role, persona, mood (one word), situation, hidden_objections (3 strings the
+customer {name, role, voice (female or male), persona, mood (one word), situation, hidden_objections (3 strings the
 customer will not volunteer), wins_if, walks_away_if}, opening_line (the customer's first words),
 minutes (3 to 10), goals (2 or 3 of {name (2-4 words), description (one sentence), weight 1-3}).
 The customer may only know what a real customer would; base product details on the product facts.

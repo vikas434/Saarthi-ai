@@ -14,6 +14,7 @@ for key in (
     "CLERK_SECRET_KEY",
     "CLERK_PUBLISHABLE_KEY",
     "RENDER",
+    "ELEVENLABS_API_KEY",
 ):
     os.environ[key] = ""
 os.environ.pop("RAILWAY_ENVIRONMENT", None)

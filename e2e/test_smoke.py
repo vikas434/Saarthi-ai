@@ -7,6 +7,7 @@ open, and nothing is logged to the console as an error.
 from __future__ import annotations
 
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -289,3 +290,67 @@ def test_practice_tab_returns_to_the_customer_list(page: Page) -> None:
     page.click('nav button[data-tab="practice"]')
     expect(page.locator("#pick")).to_be_visible()
     expect(page.locator("#report")).to_be_hidden()
+
+
+# A stand-in for the browser's audio player: records what it was asked to play, ends at once.
+FAKE_AUDIO = """
+window.__played = [];
+window.Audio = class { constructor(src) { this.src = src; }
+  play() { window.__played.push(this.src); setTimeout(() => this.onended && this.onended(), 20); return Promise.resolve(); }
+  pause() {} };
+"""
+
+
+def test_customer_speaks_with_the_human_voice_when_the_server_has_it(page: Page) -> None:
+    def config_with_human_voice(route):
+        body = route.fetch().json()
+        route.fulfill(json={**body, "voice": "elevenlabs"})
+
+    page.add_init_script(FAKE_AUDIO)
+    page.route("**/api/config", config_with_human_voice)
+    asked: list[str] = []
+
+    def fake_voice(route):
+        asked.append(route.request.url)
+        route.fulfill(status=200, content_type="audio/mpeg", body=b"ID3fake")
+
+    page.route("**/api/sessions/*/voice/*", fake_voice)
+    page.reload()
+    _sign_in(page, "agent@example.com")
+    page.evaluate("document.getElementById('hands-free').checked = false")
+    page.locator("#scenarios button", has_text="Start call").first.click()
+    expect(page.locator("#chat .msg.customer")).to_have_count(1)
+    page.wait_for_function("window.__played.length >= 1")
+    _say(page, "Hi Meera, how do you keep your books today?", 1)
+    page.wait_for_function("window.__played.length >= 2")
+    assert [u.rsplit("/", 1)[-1] for u in asked] == ["0", "1"]  # opening line, then reply 1
+
+
+def test_scoring_shows_a_clear_waiting_panel(page: Page) -> None:
+    def slow_end(route):
+        page.wait_for_timeout(800)  # scoring takes a while with a real model
+        route.continue_()
+
+    page.route("**/api/sessions/*/end", slow_end)
+    _sign_in(page, "agent@example.com")
+    page.evaluate("document.getElementById('hands-free').checked = false")
+    page.locator("#scenarios button", has_text="Start call").first.click()
+    page.uncheck("#speak")
+    _say(page, "Hi Meera, how do you keep your books today?", 1)
+    page.click("#end")
+    expect(page.locator("#scoring")).to_be_visible()
+    expect(page.locator("#scoring")).to_contain_text("Scoring your call")
+    expect(page.locator("#report .banner")).to_be_visible()
+    expect(page.locator("#scoring")).to_be_hidden()
+
+
+def test_picking_a_persona_renames_the_customer_everywhere(page: Page) -> None:
+    _sign_in(page, "agent@example.com")
+    page.click('nav button[data-tab="build"]')
+    page.locator(".chip", has_text="Cold sales call").click()
+    expect(page.locator("#rp-brief")).to_have_value(re.compile("Sanjay"))
+    page.select_option("#rp-persona-pick", label="Meera · Boutique owner")
+    expect(page.locator("#rp-name")).to_have_value("Meera")
+    expect(page.locator("#rp-brief")).not_to_have_value(re.compile("Sanjay"))
+    expect(page.locator("#rp-brief")).to_have_value(re.compile("Meera"))
+    expect(page.locator("#rp-voice")).to_have_value("female")

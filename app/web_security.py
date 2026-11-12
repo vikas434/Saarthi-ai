@@ -43,6 +43,7 @@ def content_security_policy() -> str:
         "connect-src": f"'self'{extra} {CLERK_STATIC_HOSTS[1]}",
         "frame-src": CLOUDFLARE_CHALLENGE,
         "worker-src": "'self' blob:",
+        "media-src": "'self' blob:",  # the customer's human voice plays from a blob
         "form-action": "'self'",
         "base-uri": "'self'",
         "object-src": "'none'",
