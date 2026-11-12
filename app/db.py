@@ -22,7 +22,7 @@ from app.config import db_path, env
 logger = logging.getLogger(__name__)
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
-HEAD_REVISION = "0006"
+HEAD_REVISION = "0007"
 PROTOTYPE_REVISION = "0001"  # what a pre-migration SQLite file already matches
 _MIGRATION_LOCK_ID = 720_115  # Postgres advisory lock: one migrator at a time
 _POSTGRES_PREFIXES = ("postgres://", "postgresql://")

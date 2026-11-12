@@ -8,7 +8,7 @@ Practise customer calls with an AI customer. A coach comments on every reply, an
 
 ## What it does
 
-1. **Pick a customer.** Each scenario has a short brief for the agent; the customer's real concerns stay hidden.
+1. **Pick a customer.** Each scenario has a short brief for the agent; the customer's real concerns stay hidden. Press **Learn first** for a short lesson on the product facts this call needs and three check questions (it counts as one of the day's calls).
    **Or build your own** in the Build tab: describe the call and the AI drafts it, or start from a template (cold call, inbound discovery, upset customer, renewal, support escalation). Edit the persona, context, goals (scored on the scorecard), hidden objections and time limit. Your roleplays are private; the admin can publish one to everyone.
 2. **Talk.** Hands-free by default in Chrome: the phone rings, the customer speaks first, and Saarthi listens after each line; pause to send. Typing always works. Each call has a time limit (6 minutes unless the roleplay sets one) and ends itself when time runs out.
 3. **Get coached live.** After each reply the coach names one behaviour (good, mixed or improve), quotes you, and suggests a better line. Product claims are checked against the product facts.
@@ -91,6 +91,7 @@ app/
   main.py          routes; /api needs sign-in (except /api/auth/config)
   deps.py          who is calling: signed-in person, admin only
   roleplays.py, roleplay_routes.py  roleplay builder, templates, personas, publishing
+  tutor.py, tutor_routes.py         tutor mode: lesson from the product facts, three graded questions
   auth.py          Clerk token check, allow-list, roles
   coach.py         customer, live coach, scorecard, survey, scenario drafting
   schemas.py       JSON schemas the model must answer in
@@ -105,6 +106,7 @@ app/
   static/voice.js    ring, customer voice, hands-free listening (browser speech, no keys)
   static/report.js   the scorecard: banner, Coaching and Analytics tabs
   static/builder.js  the Build tab: describe or template, edit, save, publish
+  static/tutor.js    Learn first: lesson, questions, result
 config/            markers, scenarios, roleplay templates, personas, sample product facts, model prices
 evals/             strong and weak agent scripts for python -m app.evals
 tests/, e2e/       unit tests and the browser smoke test

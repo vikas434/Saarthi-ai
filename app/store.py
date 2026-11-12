@@ -28,14 +28,20 @@ def now() -> str:
 
 
 def create_session(
-    scenario_id: str, agent_name: str, opening: str, mode: str, user_id: str | None = None
+    scenario_id: str,
+    agent_name: str,
+    opening: str,
+    mode: str,
+    user_id: str | None = None,
+    kind: str = "roleplay",
 ) -> str:
     sid = uuid.uuid4().hex[:12]
     with _tx() as conn:
         conn.execute(
             text(
-                "INSERT INTO sessions (id, scenario_id, agent_name, started_at, mode, user_id) "
-                "VALUES (:id, :scenario_id, :agent_name, :started_at, :mode, :user_id)"
+                "INSERT INTO sessions "
+                "(id, scenario_id, agent_name, started_at, mode, user_id, kind) "
+                "VALUES (:id, :scenario_id, :agent_name, :started_at, :mode, :user_id, :kind)"
             ),
             {
                 "id": sid,
@@ -44,6 +50,7 @@ def create_session(
                 "started_at": now(),
                 "mode": mode,
                 "user_id": user_id,
+                "kind": kind,
             },
         )
         conn.execute(
@@ -65,8 +72,9 @@ def get_session(sid: str) -> dict | None:
         turns = conn.execute(
             text("SELECT * FROM turns WHERE session_id = :sid ORDER BY idx"), {"sid": sid}
         ).mappings()
+        # The plan holds a tutor's answer keys: never part of a session that may be shown.
         return {
-            **dict(found),
+            **{k: v for k, v in dict(found).items() if k != "plan"},
             "report": json.loads(found["report"]) if found["report"] else None,
             "turns": [
                 {**dict(t), "coach": json.loads(t["coach"]) if t["coach"] else None} for t in turns
@@ -106,6 +114,22 @@ def add_turn(
             conn.execute(text("UPDATE sessions SET done = 1 WHERE id = :sid"), {"sid": sid})
 
 
+def get_plan(sid: str) -> dict | None:
+    with _tx() as conn:
+        raw = conn.execute(
+            text("SELECT plan FROM sessions WHERE id = :sid"), {"sid": sid}
+        ).scalar_one_or_none()
+        return json.loads(raw) if raw else None
+
+
+def set_plan(sid: str, plan: dict) -> None:
+    with _tx() as conn:
+        conn.execute(
+            text("UPDATE sessions SET plan = :plan WHERE id = :sid"),
+            {"plan": json.dumps(plan), "sid": sid},
+        )
+
+
 def save_report(sid: str, report: dict) -> None:
     with _tx() as conn:
         conn.execute(
@@ -128,12 +152,19 @@ def list_sessions(user_id: str | None = None) -> list[dict]:
     with _tx() as conn:
         rows = conn.execute(
             text(
-                "SELECT id, scenario_id, agent_name, started_at, ended_at, score, mode "
+                "SELECT id, scenario_id, agent_name, started_at, ended_at, score, mode, kind, "
+                "CASE WHEN kind = 'tutor' THEN report END AS tutor_report "
                 f"FROM sessions {owner}ORDER BY started_at DESC LIMIT :limit"
             ),
             {"limit": SESSION_LIST_LIMIT, "user_id": user_id},
         ).mappings()
-        return [dict(r) for r in rows]
+        return [
+            {
+                **{k: v for k, v in dict(r).items() if k != "tutor_report"},
+                "tutor_report": json.loads(r["tutor_report"]) if r["tutor_report"] else None,
+            }
+            for r in rows
+        ]
 
 
 def scored_reports(user_id: str | None = None) -> list[dict]:
@@ -141,7 +172,8 @@ def scored_reports(user_id: str | None = None) -> list[dict]:
     with _tx() as conn:
         rows = conn.execute(
             text(
-                f"SELECT report FROM sessions WHERE report IS NOT NULL {owner}ORDER BY started_at"
+                "SELECT report FROM sessions WHERE report IS NOT NULL AND kind = 'roleplay' "
+                f"{owner}ORDER BY started_at"
             ),
             {"user_id": user_id},
         ).scalars()

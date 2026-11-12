@@ -81,6 +81,24 @@ def survey_schema(survey_ids: list[str]) -> dict:
     return _obj({"answers": {"type": "array", "items": answer}})
 
 
+def tutor_lesson_schema() -> dict:
+    """A short product lesson and three check questions with their answer keys."""
+    point = _obj({"title": _STR, "explain": _STR})
+    question = _obj({"question": _STR, "answer": _STR})
+    return _obj(
+        {
+            "intro": _STR,
+            "points": {"type": "array", "items": point},
+            "questions": {"type": "array", "items": question},
+        }
+    )
+
+
+def tutor_grade_schema() -> dict:
+    """The tutor's verdict on one answer."""
+    return _obj({"correct": {"type": "boolean"}, "feedback": _STR, "ideal": _STR})
+
+
 def scenario_schema() -> dict:
     """A practice roleplay drafted from a sentence or two."""
     customer = _obj(

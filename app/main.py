@@ -15,6 +15,7 @@ from app.auth import AuthError, Principal
 from app.deps import Admin, User
 from app.limits import LimitReached
 from app.roleplay_routes import router as roleplay_router
+from app.tutor_routes import router as tutor_router
 from app.web_security import SecurityMiddleware
 
 
@@ -35,6 +36,7 @@ app = FastAPI(
 )
 app.add_middleware(SecurityMiddleware)
 app.include_router(roleplay_router)
+app.include_router(tutor_router)
 STATIC = Path(__file__).parent / "static"
 
 
@@ -94,7 +96,7 @@ def index() -> FileResponse:
 
 
 # Scripts next to the single page: voice for calls, and the scorecard view.
-PAGE_SCRIPTS = frozenset({"voice", "report", "builder"})
+PAGE_SCRIPTS = frozenset({"voice", "report", "builder", "tutor"})
 
 
 @app.get("/{name}.js")
@@ -177,6 +179,11 @@ def _session_or_404(sid: str, user: Principal) -> dict:
     return session
 
 
+def _roleplay_only(session: dict) -> None:
+    if session.get("kind") == "tutor":
+        raise HTTPException(status_code=409, detail="This is a tutor session, not a call.")
+
+
 def _for_viewer(session: dict, user: Principal) -> dict:
     """The admin also sees what the call cost."""
     if user.role != "admin":
@@ -204,6 +211,7 @@ def start(body: StartIn, user: User) -> dict:
 @app.post("/api/sessions/{sid}/turns")
 def turn(sid: str, body: TurnIn, user: User) -> dict:
     session = _session_or_404(sid, user)
+    _roleplay_only(session)
     if session["report"] is not None or session["done"]:
         raise HTTPException(status_code=409, detail="This call has ended. Get the scorecard.")
     if sum(1 for t in session["turns"] if t["agent_text"]) >= limits.max_replies_per_call():
@@ -227,6 +235,7 @@ def turn(sid: str, body: TurnIn, user: User) -> dict:
 @app.post("/api/sessions/{sid}/end")
 def end(sid: str, user: User) -> dict:
     session = _session_or_404(sid, user)
+    _roleplay_only(session)
     if session["report"] is None:
         if not any(t["agent_text"] for t in session["turns"]):
             raise HTTPException(status_code=400, detail="Say something to the customer first.")
@@ -241,7 +250,13 @@ def end(sid: str, user: User) -> dict:
 def sessions(user: User) -> list[dict]:
     titles = {s["id"]: s["title"] for s in coach.load_scenarios()}
     return [
-        {**s, "scenario_title": titles.get(s["scenario_id"], s["scenario_id"])}
+        {
+            **{k: v for k, v in s.items() if k != "tutor_report"},
+            "scenario_title": titles.get(s["scenario_id"], s["scenario_id"]),
+            "tutor_score": f"{s['tutor_report']['score']} / {s['tutor_report']['total']}"
+            if s["tutor_report"]
+            else None,
+        }
         for s in store.list_sessions(_owner_filter(user))
     ]
 

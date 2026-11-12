@@ -57,7 +57,7 @@ Each phase ships through staging (checks, evals, commit, push, CI green, auto-de
 - Hidden objections never reach the browser for anyone except the roleplay's owner while editing.
 - Limits: drafts count toward the daily spend; at most 20 private roleplays per person.
 
-### M4 Tutor mode
+### M4 Tutor mode (done 2026-11-12)
 - Before a roleplay, an optional short tutor session teaches the product facts in chat or voice, then asks 3 check questions and scores them.
 - Counts as a call toward the daily limit.
 

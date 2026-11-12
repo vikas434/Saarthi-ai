@@ -232,6 +232,9 @@ def test_product_and_scenario_setup(client):
     assert made["id"].startswith("rp-")
     assert any(s["id"] == made["id"] for s in client.get("/api/config").json()["scenarios"])
     assert client.post("/api/sessions", json={"scenario_id": made["id"]}).status_code == 200
+    # Put the sample facts back: other tests share this database.
+    sample = (coach.CONFIG_DIR / "product.md").read_text(encoding="utf-8")
+    assert client.put("/api/product", json={"text": sample}).status_code == 200
 
 
 def test_eval_strong_agent_beats_weak_agent_offline(client):

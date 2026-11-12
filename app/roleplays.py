@@ -203,7 +203,7 @@ def draft(description: str) -> dict:
         return out
     try:
         with usage.kind("draft"):
-            data = coach._ask(
+            data = coach.ask_model(
                 llm,
                 system=DRAFT_SYSTEM + coach.load_product(),
                 user=f"Roleplay to draft: {description}\n\nJSON:",

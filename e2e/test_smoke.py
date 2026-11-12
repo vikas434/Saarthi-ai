@@ -230,3 +230,22 @@ def test_builder_shows_what_is_wrong_with_a_roleplay(page: Page) -> None:
     page.fill("#rp-title", "")
     page.click("#rp-save")
     expect(page.locator("#error")).to_contain_text("title")
+
+
+def test_learn_first_then_practise(page: Page) -> None:
+    _sign_in(page, "agent@example.com")
+    page.evaluate("document.getElementById('hands-free').checked = false")
+    page.locator("#scenarios .card").first.locator("button", has_text="Learn first").click()
+    expect(page.locator("#tutor h2")).to_contain_text("Learn first:")
+    expect(page.locator("#tutor .lesson-point").first).to_be_visible()
+    page.click("#tutor-ready")
+    for n in range(1, 4):
+        expect(page.locator("#tutor h2")).to_have_text(f"Question {n} of 3")
+        page.fill("#tutor-answer", "I would check the facts and tell them honestly.")
+        page.click("#tutor-send")
+        expect(page.locator("#tutor .answer-result")).to_contain_text("Model answer:")
+        page.click("#tutor-next")
+    expect(page.locator("#tutor-score")).to_contain_text("/ 3 right")
+    page.click("#tutor-practise")
+    expect(page.locator("#call")).to_be_visible()
+    expect(page.locator("#tutor")).to_be_hidden()

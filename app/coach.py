@@ -261,6 +261,10 @@ def _ask(
     raise ModelReplyError(f"no usable reply after {PARSE_ATTEMPTS} attempts") from last
 
 
+# Shared with the roleplay builder and the tutor.
+ask_model = _ask
+
+
 def _clean_coach(coach: dict, rubric: dict) -> dict:
     ids = {b["id"] for b in rubric["behaviors"]}
     verdict = str(coach.get("verdict", "mixed")).lower()

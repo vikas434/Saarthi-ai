@@ -79,6 +79,9 @@
   .goal-row { display:grid; gap:8px; grid-template-columns:2fr 3fr 130px auto; align-items:center; margin-bottom:8px; }
   @media (max-width:700px) { .goal-row { grid-template-columns:1fr; } }
   textarea { resize:vertical; }
+  .lesson-point { margin-bottom:12px; } .lesson-point b { display:block; margin-bottom:2px; }
+  .answer-result { margin-top:10px; padding:10px 12px; border-radius:10px; }
+  .answer-result.right { background:#e8f7ee; } .answer-result.wrong { background:#fff4e0; }
   .verdict { margin-left:auto; font-size:11px; padding:2px 10px; border-radius:999px; }
   .verdict.good { background:#e8f7ee; color:var(--good); } .verdict.watch { background:#fff4e0; color:var(--mixed); }
 </style>
@@ -144,6 +147,7 @@
     </div>
 
     <div id="report" class="hidden"></div>
+    <div id="tutor" class="hidden"></div>
   </section>
 
   <section id="tab-build" class="hidden"><div id="builder"></div></section>
@@ -201,6 +205,7 @@
 <script src="/voice.js"></script>
 <script src="/report.js"></script>
 <script src="/builder.js"></script>
+<script src="/tutor.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => {
@@ -336,7 +341,9 @@ async function loadConfig() {
       el("p", { className: "muted", style: "margin:0 0 6px", textContent: who }),
       el("p", { className: "muted", textContent: s.public_brief }));
     if (s.goals?.length) card.append(el("p", { className: "goals", textContent: "Scored on: " + s.goals.join(", ") }));
-    card.append(start);
+    const learn = el("button", { className: "ghost", textContent: "Learn first" });
+    learn.addEventListener("click", () => startTutor(s).catch(fail));
+    card.append(el("div", { className: "row", style: "margin:0" }, start, learn));
     list.append(card);
   }
   const table = $("markers"); table.replaceChildren(
@@ -477,7 +484,7 @@ async function startCall(scenarioId) {
     body: JSON.stringify({ scenario_id: scenarioId, agent_name: $("agent").value.trim() || "Agent" }) });
   session = data;
   cfg = { ...cfg, calls_left: Math.max(0, cfg.calls_left - 1) }; showCallsLeft();
-  $("pick").classList.add("hidden"); $("report").classList.add("hidden"); $("call").classList.remove("hidden");
+  $("pick").classList.add("hidden"); $("report").classList.add("hidden"); $("tutor").classList.add("hidden"); $("call").classList.remove("hidden");
   $("call-title").textContent = "Call with " + data.scenario.customer_name;
   $("call-brief").textContent = data.scenario.public_brief;
   $("chat").replaceChildren();
@@ -547,10 +554,12 @@ async function loadHistory() {
   }
   const t = $("sessions"); t.replaceChildren(el("tr", {}, ...["When", "Agent", "Customer scenario", "SQS"].map((h) => el("th", { textContent: h }))));
   for (const s of rows) {
-    const tr = el("tr", { className: "click" }, el("td", { textContent: new Date(s.started_at).toLocaleString() }),
-      el("td", { textContent: s.agent_name }), el("td", { textContent: s.scenario_title }),
-      el("td", { textContent: s.score == null ? "not scored" : s.score + "%" }));
-    tr.addEventListener("click", async () => {
+    const tutorRow = s.kind === "tutor";
+    const result = tutorRow ? `Tutor quiz ${s.tutor_score ?? "not finished"}` : s.score == null ? "not scored" : s.score + "%";
+    const tr = el("tr", { className: tutorRow ? "" : "click" }, el("td", { textContent: new Date(s.started_at).toLocaleString() }),
+      el("td", { textContent: s.agent_name }), el("td", { textContent: (tutorRow ? "Learn: " : "") + s.scenario_title }),
+      el("td", { textContent: result }));
+    if (!tutorRow) tr.addEventListener("click", async () => {
       try { const full = await api("/api/sessions/" + s.id);
             if (full.report) { showTab("practice"); showReport(full); } } catch (e) { fail(e); }
     });
