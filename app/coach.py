@@ -6,8 +6,9 @@ import json
 import logging
 import re
 from concurrent.futures import ThreadPoolExecutor
+from contextvars import copy_context
 
-from app import offline, schemas, store
+from app import offline, schemas, store, usage
 from app.config import CONFIG_DIR, MAX_AGENT_TURNS
 from app.llm import LLM, ModelReplyError, get_llm, parse_json
 
@@ -233,13 +234,14 @@ def next_turn(session: dict, agent_text: str) -> dict:
             f"Agent's latest message:\n{agent_text}\n\nJSON:"
         )
         try:
-            data = _ask(
-                llm,
-                system=_turn_system(scenario, rubric, load_product()),
-                user=user,
-                max_tokens=TURN_MAX_TOKENS,
-                schema=schemas.turn_schema([b["id"] for b in rubric["behaviors"]]),
-            )
+            with usage.kind("turn"):
+                data = _ask(
+                    llm,
+                    system=_turn_system(scenario, rubric, load_product()),
+                    user=user,
+                    max_tokens=TURN_MAX_TOKENS,
+                    schema=schemas.turn_schema([b["id"] for b in rubric["behaviors"]]),
+                )
             result = {
                 "customer": str(data["customer"]).strip(),
                 "done": bool(data.get("done")),
@@ -335,6 +337,11 @@ def _weighted_percent(behaviors: list[dict]) -> float | None:
 
 
 def _coach_data(llm, session, scenario, behaviors, items, agent_turns) -> tuple[dict, str]:
+    with usage.kind("report"):
+        return _coach_data_inner(llm, session, scenario, behaviors, items, agent_turns)
+
+
+def _coach_data_inner(llm, session, scenario, behaviors, items, agent_turns) -> tuple[dict, str]:
     if llm is not None:
         try:
             data = _ask(
@@ -354,6 +361,11 @@ def _coach_data(llm, session, scenario, behaviors, items, agent_turns) -> tuple[
 
 
 def _survey_data(llm, session, scenario, surveys, agent_turns) -> tuple[list[dict], str]:
+    with usage.kind("survey"):
+        return _survey_data_inner(llm, session, scenario, surveys, agent_turns)
+
+
+def _survey_data_inner(llm, session, scenario, surveys, agent_turns) -> tuple[list[dict], str]:
     if not surveys:
         return [], "none"
     if llm is not None:
@@ -381,10 +393,13 @@ def build_report(session: dict) -> dict:
     agent_turns = [t["agent_text"] for t in session["turns"] if t.get("agent_text")]
     llm = get_llm()
     with ThreadPoolExecutor(max_workers=2) as pool:
+        # Each thread gets its own copy of the caller's context, so usage is attributed.
         coach_future = pool.submit(
-            _coach_data, llm, session, scenario, behaviors, items, agent_turns
+            copy_context().run, _coach_data, llm, session, scenario, behaviors, items, agent_turns
         )
-        survey_future = pool.submit(_survey_data, llm, session, scenario, surveys, agent_turns)
+        survey_future = pool.submit(
+            copy_context().run, _survey_data, llm, session, scenario, surveys, agent_turns
+        )
         data, source = coach_future.result()
         answers, survey_source = survey_future.result()
 
@@ -512,19 +527,21 @@ def draft_scenario(description: str) -> dict:
     llm = get_llm()
     if llm is not None:
         try:
-            data = _ask(
-                llm,
-                system=(
-                    "Draft a sales practice scenario as JSON only, with keys: title, difficulty "
-                    "(Easy|Medium|Hard), public_brief (what the agent is told, 1-2 sentences), "
-                    "customer {name, persona, mood, situation, hidden_objections (3 strings), "
-                    "wins_if, walks_away_if}, opening_line (the customer's first words). "
-                    f"Base it on the product facts.\n\nProduct facts:\n{load_product()}"
-                ),
-                user=f"Customer to practise with: {description}\n\nJSON:",
-                max_tokens=SCENARIO_MAX_TOKENS,
-                schema=schemas.scenario_schema(),
-            )
+            with usage.kind("draft"):
+                data = _ask(
+                    llm,
+                    system=(
+                        "Draft a sales practice scenario as JSON only, with keys: title, "
+                        "difficulty (Easy|Medium|Hard), public_brief (what the agent is told, "
+                        "1-2 sentences), customer {name, persona, mood, situation, "
+                        "hidden_objections (3 strings), wins_if, walks_away_if}, opening_line "
+                        "(the customer's first words). Base it on the product facts.\n\n"
+                        f"Product facts:\n{load_product()}"
+                    ),
+                    user=f"Customer to practise with: {description}\n\nJSON:",
+                    max_tokens=SCENARIO_MAX_TOKENS,
+                    schema=schemas.scenario_schema(),
+                )
             for key in ("title", "difficulty", "public_brief", "opening_line"):
                 if data.get(key):
                     scenario[key] = str(data[key])

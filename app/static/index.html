@@ -449,7 +449,8 @@ function showReport(s) {
   const head = el("div", { className: "card", style: "margin-bottom:16px" },
     el("h2", { textContent: "Scorecard" }), el("p", { textContent: r.summary }),
     el("p", {}, el("b", { textContent: "Next drill: " }), r.next_drill),
-    el("p", { className: "muted", textContent: `Scored by ${r.scored_by} · ${r.agent_turns} replies` }), again);
+    el("p", { className: "muted", textContent: `Scored by ${r.scored_by} · ${r.agent_turns} replies`
+      + (typeof s.cost_usd === "number" ? ` · Model cost $${s.cost_usd.toFixed(4)}` : "") }), again);
   if (r.fallback) head.insertBefore(el("p", { className: "error",
     textContent: "Some scores on this card are rule-of-thumb estimates: the model's answer could not be used. Treat them as rough." }), again);
   const lists = el("div", { className: "grid", style: "margin-bottom:16px" });

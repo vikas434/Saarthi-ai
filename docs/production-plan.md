@@ -26,8 +26,8 @@ Goal: a staging URL to show stakeholders, with **no hosting bill**. Paid product
 | Model | Anthropic key from Idli | The only real cost: about Rs 0.5 per practice call on Haiku 5.5, held under a hard daily cap. |
 
 Demo steps, in order (each ends with checks, commit, push, CI green):
-1. **D1 Sign-in (Phase 4 as written):** Clerk, the two Idli emails only, everyone else sees "Your request is received. We will review and approve."
-2. **D2 Spend guard (the cap part of Phase 7):** record tokens per call, a daily spend cap, calls per agent per day, a clear "limit reached" message. Needed before the URL is public, because the model key costs money.
+1. **D1 Sign-in (Phase 4 as written)** (done 2026-11-12; Saarthi has its own Clerk app): Clerk, the two Idli emails only, everyone else sees "Your request is received. We will review and approve."
+2. **D2 Spend guard (the cap part of Phase 7)** (done 2026-11-12; measured about $0.0034 per practice call on Haiku 5.5): record tokens per call, a daily spend cap, calls per agent per day, a clear "limit reached" message. Needed before the URL is public, because the model key costs money.
 3. **D3 Deploy staging (Phase 5, free hosts):** listen on `$PORT`, `/health` and `/ready`, security headers, CORS to its own origin, `render.yaml`, Neon `DATABASE_URL`, secrets in Render only, staging URL added to Clerk.
 4. **D4 Demo check:** full call on the staging URL signed in as an agent, admin sees it, Speak works over HTTPS in Chrome, a one-page demo script in `docs/demo.md`.
 

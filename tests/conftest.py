@@ -21,6 +21,11 @@ os.environ.pop("RAILWAY_ENVIRONMENT", None)
 os.environ["AUTH_DEV_BYPASS"] = "1"
 os.environ["TEACHER_EMAIL"] = "admin@example.com"
 os.environ["STUDENT_EMAILS"] = "agent1@example.com, agent2@example.com"
+# Generous limits so tests sharing one database never trip them; tests/test_limits.py sets
+# tight limits relative to the current totals.
+os.environ["DAILY_SPEND_CAP_USD"] = "1000"
+os.environ["MAX_CALLS_PER_USER_PER_DAY"] = "100000"
+os.environ["RATE_LIMIT_PER_MINUTE"] = "100000"
 ADMIN = {"X-Dev-User": "admin@example.com"}
 AGENT1 = {"X-Dev-User": "agent1@example.com"}
 AGENT2 = {"X-Dev-User": "agent2@example.com"}

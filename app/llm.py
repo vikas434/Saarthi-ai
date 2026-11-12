@@ -8,6 +8,7 @@ from typing import Protocol
 
 import httpx
 
+from app import usage
 from app.config import env
 
 logger = logging.getLogger(__name__)
@@ -59,6 +60,7 @@ class AnthropicLLM:
             messages=[{"role": "user", "content": user}],
             output_config=output_config,
         )
+        usage.record_reply(self._model, getattr(msg, "usage", None))
         if msg.stop_reason in ("max_tokens", "refusal"):
             raise ModelReplyError(f"model stopped early: {msg.stop_reason}")
         return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")

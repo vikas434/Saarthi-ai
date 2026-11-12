@@ -24,6 +24,10 @@ Saarthi uses Clerk (see [ADR 0003](docs/adr/0003-clerk-sign-in-and-roles.md)). O
 
 For local work without Clerk, set `AUTH_DEV_BYPASS=1` and type an allow-listed email on the sign-in screen. The bypass is refused on a hosted server.
 
+## Limits and cost
+
+Every model call's tokens and cost are stored in the `usage` table (prices in `config/pricing.json`). New calls stop with a clear message when today's spend reaches `DAILY_SPEND_CAP_USD` or a person reaches `MAX_CALLS_PER_USER_PER_DAY`; `RATE_LIMIT_PER_MINUTE` limits API requests per person. The admin sees each call's model cost on its scorecard.
+
 ## How a session works
 
 1. Pick a customer scenario. You see a short brief. The customer's real concerns stay hidden.

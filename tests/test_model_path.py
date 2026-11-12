@@ -18,7 +18,9 @@ GOOD_TURN = json.dumps(
 
 
 def _start(client) -> str:
-    return client.post("/api/sessions", json={"scenario_id": SCENARIO}).json()["id"]
+    res = client.post("/api/sessions", json={"scenario_id": SCENARIO})
+    assert res.status_code == 200, res.text
+    return res.json()["id"]
 
 
 def test_turn_retries_once_on_bad_json_then_uses_the_model(client, fake_llm):
