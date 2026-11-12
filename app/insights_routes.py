@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Query
 
-from app import alerts, insights
+from app import alerts, insights, notify
 from app.deps import Admin
 
 router = APIRouter(prefix="/api/admin")
@@ -27,6 +27,7 @@ def admin_insights(admin: Admin, days: int = Query(default=7)) -> dict:
         last_call_at=business["last_call_at"],
         now=now,
     )
+    notify.send_new(firing, now)
     return {
         "days": days,
         "generated_at": now.isoformat(timespec="seconds"),

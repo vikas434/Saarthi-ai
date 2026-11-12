@@ -12,7 +12,7 @@ import time
 from starlette.concurrency import run_in_threadpool
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-from app import events
+from app import events, notify
 
 API_PREFIX = "/api/"
 USER_STATE_KEY = "saarthi_user_id"
@@ -55,3 +55,5 @@ class TelemetryMiddleware:
                 latency_ms=elapsed_ms,
                 user_id=user_id,
             )
+            # No scheduler on the free host: requests are the clock for Slack alerts.
+            await run_in_threadpool(notify.maybe_check)

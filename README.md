@@ -15,6 +15,8 @@ Practise customer calls with an AI customer. A coach comments on every reply, an
 4. **End the call.** The coach scores every behaviour and checklist item while the customer answers the survey, in parallel. The scorecard opens with one overall score, then two tabs: **Coaching** (summary, next drill, every marker, questions to prepare for, and the transcript with a better line under each reply that needed one) and **Analytics** (filler and weak words, sentence starters, reply length, talk time, longest reply, questions asked, and pace for spoken replies; worked out in code, no model cost).
 5. **Track progress.** The Dashboard shows your practice streak, calls this week, two or three plain insights, and up to four focus metrics you choose (overall score, filler words, pace, talk time, questions, any marker) over time against a target. The admin also sees a team table: each person's calls, average, and first-to-latest score. Every call is listed below.
 
+6. **See how it is going (admin).** The Insights tab shows, for the last 7 or 30 days: active, new and returning people, who came back in their second week, the funnel from sign-in to a second call, which features get used, the most practised roleplays, the average score by call number, cost per active person and per finished call, and service health (error rate, reply and scorecard times, how often the AI or voice fell back, today's spend and the month's voice budget). Alerts at the top say in plain English what needs attention. Counts only: no emails or call text. Details: [ADR 0009](docs/adr/0009-insights-events-and-alerts.md).
+
 ![Scorecard by marker](docs/screenshots/real-scorecard.jpg)
 
 ## Who can use it
@@ -23,7 +25,7 @@ Sign-in is [Clerk](https://clerk.com), on Clerk's hosted sign-in page (Google or
 
 | Role | Who | Can |
 |---|---|---|
-| Admin | `TEACHER_EMAIL` | Every call, Setup (product facts, markers, scenarios), access requests, cost per call |
+| Admin | `TEACHER_EMAIL` | Every call, Insights, Setup (product facts, markers, scenarios), access requests, cost per call |
 | Agent | `STUDENT_EMAILS` (comma-separated) | Own calls only |
 | Anyone else, with `OPEN_SIGNUP=1` | | Same as an agent; listed for the admin as "People who joined" |
 | Anyone else, sign-up closed | | Sees only "Your request is received. We will review and approve." and is listed for the admin |
@@ -76,12 +78,15 @@ All configuration is environment variables; `.env.example` lists every one.
 | `DAILY_SPEND_CAP_USD`, `MAX_CALLS_PER_USER_PER_DAY`, `RATE_LIMIT_PER_MINUTE` | Cost guards (staging: $2, 10, 60) |
 | `MAX_REPLIES_PER_CALL` | Agent replies per call before it must be scored (default 14) |
 | `MAX_ROLEPLAYS_PER_USER`, `MAX_PERSONAS_PER_USER` | Saved roleplays and personas per person (default 20 each) |
+| `SLACK_WEBHOOK_URL` | Optional Slack incoming webhook: each Insights alert is posted at most once a day while it fires |
 | `FORCE_HTTPS`, `PORT` | Hosting: HTTPS redirect and HSTS behind a proxy; the port to listen on |
 | `CLERK_JS_VERSION`, `CLERK_UI_VERSION` | Majors of Clerk's browser script (6) and sign-in screens (1) |
 
 ## Cost and limits
 
 Every model call's tokens and cost go into the `usage` table, priced from `config/pricing.json`. A practice call on Haiku 5.5 costs about $0.0034. When today's spend reaches `DAILY_SPEND_CAP_USD`, or a person reaches `MAX_CALLS_PER_USER_PER_DAY`, new calls stop with a clear message; calls in progress finish. Each person sees how many calls they have left today. The admin sees each call's cost on its scorecard. If a model reply can't be used, Saarthi retries once, then falls back to the scripted customer and labels it "backup".
+
+Alerts fire when today's spend passes 80% of the cap, the human-voice budget passes 80%, more than 10% of model calls in 24 hours used the backup, 1 in 20 replies take over 8 seconds, more than 2% of requests fail, or nobody has practised for 3 days. Change the thresholds in `config/alerts.json`. The host has no scheduler, so alerts are checked when the admin opens Insights and after API requests (at most every 5 minutes).
 
 ## How it is built
 

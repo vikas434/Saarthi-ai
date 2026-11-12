@@ -15,6 +15,7 @@ for key in (
     "CLERK_PUBLISHABLE_KEY",
     "RENDER",
     "ELEVENLABS_API_KEY",
+    "SLACK_WEBHOOK_URL",
 ):
     os.environ[key] = ""
 os.environ.pop("RAILWAY_ENVIRONMENT", None)

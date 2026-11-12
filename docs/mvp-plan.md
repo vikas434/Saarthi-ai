@@ -72,3 +72,7 @@ Today a call costs about $0.0034. Line-by-line suggestions add output to the sco
 ## Open questions for later
 - Custom domain and Clerk production keys once the demo goes beyond a small circle.
 - Deleting old transcripts (90 days) applies to open users too; say so in the first-visit note.
+
+## Insights (2026-11-12)
+Admin-only Insights tab: adoption, funnel, feature use, score change, cost, service health and alerts, with optional Slack alerts. Built in four steps (D1 events, D2 API, D3 tab, D4 Slack). See [ADR 0009](adr/0009-insights-events-and-alerts.md).
+
