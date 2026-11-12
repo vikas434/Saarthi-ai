@@ -249,3 +249,26 @@ def test_learn_first_then_practise(page: Page) -> None:
     page.click("#tutor-practise")
     expect(page.locator("#call")).to_be_visible()
     expect(page.locator("#tutor")).to_be_hidden()
+
+
+def test_dashboard_shows_focus_charts_and_team(page: Page) -> None:
+    _sign_in(page, "admin@example.com")
+    page.evaluate("document.getElementById('hands-free').checked = false")
+    for _ in range(2):
+        page.locator("#scenarios button", has_text="Start call").first.click()
+        page.uncheck("#speak")
+        _say(page, "Hi Meera, how do you keep your books today?", 1)
+        page.click("#end")
+        expect(page.locator("#report .banner")).to_be_visible()
+        page.locator("#report button", has_text="Practise again").click()
+    page.click('nav button[data-tab="history"]')
+    expect(page.locator("#dashboard .stat").first).to_contain_text("Practice streak")
+    expect(page.locator("#focus-charts .chart")).to_have_count(4)
+    overall = page.locator("#focus-charts .chart", has_text="Overall score")
+    expect(overall.locator("polyline")).to_have_count(1)
+    assert overall.locator("circle[r='4']").count() >= 2  # earlier tests share this database
+    page.click("#choose-focus")
+    page.locator("#focus-picker label", has_text="Filler words").locator("input").uncheck()
+    page.click("#save-focus")
+    expect(page.locator("#focus-charts .chart")).to_have_count(3)
+    expect(page.locator("#team-table")).to_contain_text("admin")

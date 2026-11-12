@@ -180,6 +180,20 @@ def scored_reports(user_id: str | None = None) -> list[dict]:
         return [json.loads(r) for r in rows]
 
 
+def scored_calls(user_id: str | None = None) -> list[dict]:
+    """Scored roleplay calls, oldest first: one person's, or everyone's (admin team view)."""
+    owner = "" if user_id is None else "AND user_id = :user_id "
+    with _tx() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT user_id, agent_name, started_at, ended_at, report FROM sessions "
+                f"WHERE report IS NOT NULL AND kind = 'roleplay' {owner}ORDER BY started_at"
+            ),
+            {"user_id": user_id},
+        ).mappings()
+        return [{**dict(r), "report": json.loads(r["report"])} for r in rows]
+
+
 def record_access_request(email: str) -> None:
     """Remember a sign-in from outside the allow-list: one row per email, counted."""
     stamp = now()

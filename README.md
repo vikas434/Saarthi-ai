@@ -13,7 +13,7 @@ Practise customer calls with an AI customer. A coach comments on every reply, an
 2. **Talk.** Hands-free by default in Chrome: the phone rings, the customer speaks first, and Saarthi listens after each line; pause to send. Typing always works. Each call has a time limit (6 minutes unless the roleplay sets one) and ends itself when time runs out.
 3. **Get coached live.** After each reply the coach names one behaviour (good, mixed or improve), quotes you, and suggests a better line. Product claims are checked against the product facts.
 4. **End the call.** The coach scores every behaviour and checklist item while the customer answers the survey, in parallel. The scorecard opens with one overall score, then two tabs: **Coaching** (summary, next drill, every marker, questions to prepare for, and the transcript with a better line under each reply that needed one) and **Analytics** (filler and weak words, sentence starters, reply length, talk time, longest reply, questions asked, and pace for spoken replies; worked out in code, no model cost).
-5. **Track progress.** History shows every call, the trend per marker and the average per behaviour.
+5. **Track progress.** The Dashboard shows your practice streak, calls this week, two or three plain insights, and up to four focus metrics you choose (overall score, filler words, pace, talk time, questions, any marker) over time against a target. The admin also sees a team table: each person's calls, average, and first-to-latest score. Every call is listed below.
 
 ![Scorecard by marker](docs/screenshots/real-scorecard.jpg)
 
@@ -92,6 +92,7 @@ app/
   deps.py          who is calling: signed-in person, admin only
   roleplays.py, roleplay_routes.py  roleplay builder, templates, personas, publishing
   tutor.py, tutor_routes.py         tutor mode: lesson from the product facts, three graded questions
+  dashboard.py, dashboard_routes.py focus metrics over time, streak, insights, team view
   auth.py          Clerk token check, allow-list, roles
   coach.py         customer, live coach, scorecard, survey, scenario drafting
   schemas.py       JSON schemas the model must answer in
@@ -107,6 +108,7 @@ app/
   static/report.js   the scorecard: banner, Coaching and Analytics tabs
   static/builder.js  the Build tab: describe or template, edit, save, publish
   static/tutor.js    Learn first: lesson, questions, result
+  static/dashboard.js  the Dashboard tab: stats, insights, focus charts, team table
 config/            markers, scenarios, roleplay templates, personas, sample product facts, model prices
 evals/             strong and weak agent scripts for python -m app.evals
 tests/, e2e/       unit tests and the browser smoke test

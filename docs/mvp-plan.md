@@ -61,7 +61,7 @@ Each phase ships through staging (checks, evals, commit, push, CI green, auto-de
 - Before a roleplay, an optional short tutor session teaches the product facts in chat or voice, then asks 3 check questions and scores them.
 - Counts as a call toward the daily limit.
 
-### M5 Personal dashboard
+### M5 Personal dashboard (done 2026-11-12)
 - Pick up to 4 focus metrics (filler words, pace, talk time, questions, any marker) and see them over time against a target.
 - Practice streak and two or three plain insights ("11% of your sentences start with 'I'm'").
 - Admin team view: people, calls, average scores, who is improving.

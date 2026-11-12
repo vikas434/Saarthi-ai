@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from app import auth, coach, db, limits, roleplays, store, usage
 from app.auth import AuthError, Principal
+from app.dashboard_routes import router as dashboard_router
 from app.deps import Admin, User
 from app.limits import LimitReached
 from app.roleplay_routes import router as roleplay_router
@@ -37,6 +38,7 @@ app = FastAPI(
 app.add_middleware(SecurityMiddleware)
 app.include_router(roleplay_router)
 app.include_router(tutor_router)
+app.include_router(dashboard_router)
 STATIC = Path(__file__).parent / "static"
 
 
@@ -96,7 +98,7 @@ def index() -> FileResponse:
 
 
 # Scripts next to the single page: voice for calls, and the scorecard view.
-PAGE_SCRIPTS = frozenset({"voice", "report", "builder", "tutor"})
+PAGE_SCRIPTS = frozenset({"voice", "report", "builder", "tutor", "dashboard"})
 
 
 @app.get("/{name}.js")
