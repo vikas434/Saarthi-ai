@@ -73,8 +73,10 @@ jobs:
             -v env=staging -v pw=ci-only-role -f deploy/postgres-env-setup.sql
           DATABASE_URL=postgresql://saarthi_staging:ci-only-role@localhost:5432/saarthi_test \
             python -m app.db upgrade
-          test "$(PGPASSWORD=ci-only psql -h localhost -U postgres -d saarthi_test -tAc \
-            "select count(*) from information_schema.tables where table_schema='staging'")" = "5"
+          head="$(python -c 'from app.db import HEAD_REVISION; print(HEAD_REVISION)')"
+          got="$(PGPASSWORD=ci-only psql -h localhost -U postgres -d saarthi_test -tAc \
+            "select version_num from staging.alembic_version")"
+          echo "staging schema at $got, code head $head"; test "$got" = "$head"
 
   e2e:
     name: browser smoke test
