@@ -179,19 +179,101 @@ def list_access_requests() -> list[dict]:
 
 
 def custom_scenarios() -> list[dict]:
+    """Saved roleplays, each with its owner_id (None for the team's) and visibility."""
     with _tx() as conn:
-        rows = conn.execute(text("SELECT body FROM scenarios ORDER BY id")).scalars()
-        return [json.loads(r) for r in rows]
+        rows = conn.execute(
+            text("SELECT body, owner_id, visibility FROM scenarios ORDER BY id")
+        ).mappings()
+        return [
+            {**json.loads(r["body"]), "owner_id": r["owner_id"], "visibility": r["visibility"]}
+            for r in rows
+        ]
 
 
-def save_scenario(scenario: dict) -> None:
+def save_scenario(
+    scenario: dict, owner_id: str | None = None, visibility: str = "published"
+) -> None:
+    """Insert or replace a roleplay. owner_id and visibility are kept outside the body."""
+    body = {k: v for k, v in scenario.items() if k not in ("owner_id", "visibility")}
     with _tx() as conn:
         conn.execute(
             text(
-                "INSERT INTO scenarios (id, body) VALUES (:id, :body) "
-                "ON CONFLICT (id) DO UPDATE SET body = excluded.body"
+                "INSERT INTO scenarios (id, body, owner_id, visibility, updated_at) "
+                "VALUES (:id, :body, :owner, :visibility, :stamp) "
+                "ON CONFLICT (id) DO UPDATE SET body = excluded.body, "
+                "updated_at = excluded.updated_at"
             ),
-            {"id": scenario["id"], "body": json.dumps(scenario)},
+            {
+                "id": scenario["id"],
+                "body": json.dumps(body),
+                "owner": owner_id,
+                "visibility": visibility,
+                "stamp": now(),
+            },
+        )
+
+
+def set_scenario_visibility(scenario_id: str, visibility: str) -> bool:
+    with _tx() as conn:
+        res = conn.execute(
+            text("UPDATE scenarios SET visibility = :v WHERE id = :id"),
+            {"v": visibility, "id": scenario_id},
+        )
+        return res.rowcount > 0
+
+
+def delete_scenario(scenario_id: str) -> bool:
+    with _tx() as conn:
+        res = conn.execute(text("DELETE FROM scenarios WHERE id = :id"), {"id": scenario_id})
+        return res.rowcount > 0
+
+
+def count_scenarios(owner_id: str) -> int:
+    with _tx() as conn:
+        return int(
+            conn.execute(
+                text("SELECT COUNT(*) FROM scenarios WHERE owner_id = :o"), {"o": owner_id}
+            ).scalar_one()
+        )
+
+
+def list_personas(owner_id: str) -> list[dict]:
+    with _tx() as conn:
+        rows = conn.execute(
+            text("SELECT id, body FROM personas WHERE owner_id = :o ORDER BY created_at"),
+            {"o": owner_id},
+        ).mappings()
+        return [{**json.loads(r["body"]), "id": r["id"]} for r in rows]
+
+
+def save_persona(owner_id: str, persona: dict) -> str:
+    pid = f"pe-{uuid.uuid4().hex[:10]}"
+    with _tx() as conn:
+        conn.execute(
+            text(
+                "INSERT INTO personas (id, owner_id, body, created_at) "
+                "VALUES (:id, :o, :body, :stamp)"
+            ),
+            {"id": pid, "o": owner_id, "body": json.dumps(persona), "stamp": now()},
+        )
+    return pid
+
+
+def delete_persona(persona_id: str, owner_id: str) -> bool:
+    with _tx() as conn:
+        res = conn.execute(
+            text("DELETE FROM personas WHERE id = :id AND owner_id = :o"),
+            {"id": persona_id, "o": owner_id},
+        )
+        return res.rowcount > 0
+
+
+def count_personas(owner_id: str) -> int:
+    with _tx() as conn:
+        return int(
+            conn.execute(
+                text("SELECT COUNT(*) FROM personas WHERE owner_id = :o"), {"o": owner_id}
+            ).scalar_one()
         )
 
 

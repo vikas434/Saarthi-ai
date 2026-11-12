@@ -61,10 +61,15 @@ def calls_left(user_id: str) -> int:
     return max(0, calls_per_day() - usage.calls_today(user_id))
 
 
-def check_new_call(user_id: str) -> None:
-    """Raise LimitReached when a new practice call may not start."""
+def check_spend() -> None:
+    """Raise LimitReached when today's model spend has reached the cap."""
     if usage.spend_today() >= _float_env("DAILY_SPEND_CAP_USD", DEFAULT_DAILY_SPEND_CAP_USD):
         raise LimitReached(SPEND_LIMIT_MESSAGE)
+
+
+def check_new_call(user_id: str) -> None:
+    """Raise LimitReached when a new practice call may not start."""
+    check_spend()
     if calls_left(user_id) <= 0:
         n = calls_per_day()
         raise LimitReached(CALLS_LIMIT_TEMPLATE.format(n=n, s="" if n == 1 else "s"))

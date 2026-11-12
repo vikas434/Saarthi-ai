@@ -132,7 +132,31 @@ def public_scenario(s: dict) -> dict:
         "difficulty": s.get("difficulty", "Medium"),
         "public_brief": s["public_brief"],
         "customer_name": s["customer"]["name"],
+        "customer_role": s["customer"].get("role", ""),
         "minutes": int(s.get("minutes") or DEFAULT_CALL_MINUTES),
+        "goals": [g["name"] for g in s.get("goals", [])],
+    }
+
+
+def goal_marker(scenario: dict) -> dict | None:
+    """A roleplay's own goals, scored like a rubric on that roleplay's calls only."""
+    goals = scenario.get("goals") or []
+    if not goals:
+        return None
+    return {
+        "id": "goals",
+        "name": "Roleplay goals",
+        "type": "rubric",
+        "description": "The goals set for this roleplay.",
+        "behaviors": [
+            {
+                "id": f"goal-{i}",
+                "name": g["name"],
+                "description": g.get("description") or g["name"],
+                "weight": g.get("weight", 1),
+            }
+            for i, g in enumerate(goals, start=1)
+        ],
     }
 
 
@@ -428,7 +452,8 @@ def _survey_data_inner(llm, session, scenario, surveys, agent_turns) -> tuple[li
 def build_report(session: dict) -> dict:
     """Score the call on every marker: coach scoring and the customer's survey run together."""
     scenario = get_scenario(session["scenario_id"])
-    markers = load_markers()
+    goals = goal_marker(scenario)
+    markers = load_markers() + ([goals] if goals else [])
     behaviors = all_behaviors(markers)
     items = _checklist_items(markers)
     surveys = [m for m in markers if m["type"] == "survey"]
@@ -546,56 +571,6 @@ def build_report(session: dict) -> dict:
         "prompt_version": PROMPT_VERSION,
         "agent_turns": len(agent_turns),
     }
-
-
-def draft_scenario(description: str) -> dict:
-    """Turn one sentence into a practice scenario."""
-    slug = re.sub(r"[^a-z0-9]+", "-", description.lower()).strip("-")[:40] or "custom"
-    scenario = {
-        "id": f"custom-{slug}",
-        "title": description.strip()[:60],
-        "difficulty": "Medium",
-        "public_brief": description.strip(),
-        "customer": {
-            "name": "Alex",
-            "persona": description.strip(),
-            "mood": "Neutral",
-            "situation": "Wants to know if the product fits.",
-            "hidden_objections": [
-                "Not sure it is worth the price",
-                "Worried about the effort to switch",
-            ],
-            "wins_if": "The agent asks about their needs and answers honestly.",
-            "walks_away_if": "The agent pushes or ignores their concerns.",
-        },
-        "opening_line": "Hi, I had a few questions before I decide.",
-    }
-    llm = get_llm()
-    if llm is not None:
-        try:
-            with usage.kind("draft"):
-                data = _ask(
-                    llm,
-                    system=(
-                        "Draft a sales practice scenario as JSON only, with keys: title, "
-                        "difficulty (Easy|Medium|Hard), public_brief (what the agent is told, "
-                        "1-2 sentences), customer {name, persona, mood, situation, "
-                        "hidden_objections (3 strings), wins_if, walks_away_if}, opening_line "
-                        "(the customer's first words). Base it on the product facts.\n\n"
-                        f"Product facts:\n{load_product()}"
-                    ),
-                    user=f"Customer to practise with: {description}\n\nJSON:",
-                    max_tokens=SCENARIO_MAX_TOKENS,
-                    schema=schemas.scenario_schema(),
-                )
-            for key in ("title", "difficulty", "public_brief", "opening_line"):
-                if data.get(key):
-                    scenario[key] = str(data[key])
-            if isinstance(data.get("customer"), dict):
-                scenario["customer"].update(data["customer"])
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("scenario draft failed, using basic draft: %s", exc)
-    return scenario
 
 
 def progress(user_id: str | None = None) -> dict:

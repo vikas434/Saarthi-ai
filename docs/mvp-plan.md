@@ -48,9 +48,9 @@ Each phase ships through staging (checks, evals, commit, push, CI green, auto-de
 - **Line-by-line "say it better"** on the transcript, produced in the same scorecard model call (no extra call).
 - Report layout: score banner with Practise again, then Coaching and Analytics tabs.
 
-### M3 Roleplay builder and personas
+### M3 Roleplay builder and personas (done 2026-11-12)
 - Data model: roleplays with owner and visibility (private or published), personas table. Migration plus ADR 0005.
-- "What's your roleplay about?" box → AI drafts description, context, persona, goals, hidden objections; then an edit form with the reference's sections, and AI refine on context.
+- "What's your roleplay about?" box → AI drafts description, context, persona, goals, hidden objections; then an edit form with the reference's sections. (AI "refine" on a single section is left for later.)
 - Templates: cold sales call, inbound discovery, upset customer, renewal or upsell, support escalation.
 - Persona library: name, role, temperament, background; pick one per roleplay.
 - Goals become rubric behaviours with weights for that roleplay; markers stay global.

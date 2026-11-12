@@ -6,6 +6,7 @@
     "public_brief": "Inbound call. Meera runs a small boutique and asked for a callback about LedgerLeaf. She keeps her books in Excel.",
     "customer": {
       "name": "Meera",
+      "role": "Boutique owner",
       "persona": "Owner of a clothing boutique with 4 staff. Practical, busy, polite but guarded about money.",
       "mood": "Curious but cautious",
       "situation": "Spends every Sunday evening on Excel. Her accountant complained about messy records last quarter.",
@@ -22,6 +23,7 @@
     "public_brief": "Rahul is on the Starter plan and called in annoyed. His bank feed missed cash sales. There may be a fit for Expert Assist.",
     "customer": {
       "name": "Rahul",
+      "role": "Cafe owner",
       "persona": "Runs a cafe. Direct, impatient, feels he was oversold.",
       "mood": "Frustrated",
       "situation": "His reports looked wrong because cash sales were never entered. He thinks the product is broken.",
@@ -38,6 +40,7 @@
     "public_brief": "Ananya is a freelance designer comparing two bookkeeping tools. She booked a 10-minute demo call.",
     "customer": {
       "name": "Ananya",
+      "role": "Freelance designer",
       "persona": "Freelance designer, organised, asks precise questions, values honesty.",
       "mood": "Friendly and analytical",
       "situation": "Sends about 15 invoices a month and wants GST reports without hiring an accountant full time.",

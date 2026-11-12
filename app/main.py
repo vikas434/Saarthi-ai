@@ -5,15 +5,16 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Annotated
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from app import auth, coach, db, limits, store, usage
+from app import auth, coach, db, limits, roleplays, store, usage
 from app.auth import AuthError, Principal
+from app.deps import Admin, User
 from app.limits import LimitReached
+from app.roleplay_routes import router as roleplay_router
 from app.web_security import SecurityMiddleware
 
 
@@ -33,6 +34,7 @@ app = FastAPI(
     openapi_url=None,
 )
 app.add_middleware(SecurityMiddleware)
+app.include_router(roleplay_router)
 STATIC = Path(__file__).parent / "static"
 
 
@@ -60,10 +62,6 @@ class MarkerIn(BaseModel):
     max: int = 5
 
 
-class ScenarioIn(BaseModel):
-    description: str = Field(min_length=5, max_length=500)
-
-
 @app.exception_handler(AuthError)
 def _auth_error(_: Request, exc: AuthError) -> JSONResponse:
     headers = {"WWW-Authenticate": "Bearer"} if exc.status == 401 else None
@@ -73,25 +71,6 @@ def _auth_error(_: Request, exc: AuthError) -> JSONResponse:
 @app.exception_handler(LimitReached)
 def _limit_reached(_: Request, exc: LimitReached) -> JSONResponse:
     return JSONResponse({"detail": exc.detail}, status_code=429)
-
-
-def current_user(
-    authorization: Annotated[str | None, Header()] = None,
-    x_dev_user: Annotated[str | None, Header()] = None,
-) -> Principal:
-    user = auth.authenticate(authorization, x_dev_user)
-    limits.check_rate(user.user_id)
-    return user
-
-
-def admin_user(user: Annotated[Principal, Depends(current_user)]) -> Principal:
-    if user.role != "admin":
-        raise HTTPException(status_code=403, detail="Only the admin can change Setup.")
-    return user
-
-
-User = Annotated[Principal, Depends(current_user)]
-Admin = Annotated[Principal, Depends(admin_user)]
 
 
 @app.get("/health")
@@ -115,7 +94,7 @@ def index() -> FileResponse:
 
 
 # Scripts next to the single page: voice for calls, and the scorecard view.
-PAGE_SCRIPTS = frozenset({"voice", "report"})
+PAGE_SCRIPTS = frozenset({"voice", "report", "builder"})
 
 
 @app.get("/{name}.js")
@@ -150,7 +129,7 @@ def config(user: User) -> dict:
         "calls_left": limits.calls_left(user.user_id),
         "rubric": coach.load_rubric(),
         "markers": coach.load_markers(),
-        "scenarios": [coach.public_scenario(s) for s in coach.load_scenarios()],
+        "scenarios": roleplays.library(user),
         "product": coach.load_product(),
     }
 
@@ -159,14 +138,6 @@ def config(user: User) -> dict:
 def set_product(body: ProductIn, _: Admin) -> dict:
     store.set_kv("product", body.text)
     return {"saved": True}
-
-
-@app.post("/api/scenarios")
-def add_scenario(body: ScenarioIn, user: Admin) -> dict:
-    with usage.attribute(session_id=None, user_id=user.user_id):
-        scenario = coach.draft_scenario(body.description)
-    store.save_scenario(scenario)
-    return coach.public_scenario(scenario)
 
 
 @app.post("/api/markers")
@@ -216,7 +187,7 @@ def _for_viewer(session: dict, user: Principal) -> dict:
 @app.post("/api/sessions")
 def start(body: StartIn, user: User) -> dict:
     scenario = coach.get_scenario(body.scenario_id)
-    if scenario is None:
+    if scenario is None or not roleplays.can_use(scenario, user):
         raise HTTPException(status_code=404, detail="Scenario not found")
     limits.check_new_call(user.user_id)
     name = body.agent_name.strip() or user.email.split("@", 1)[0]

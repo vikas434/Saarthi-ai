@@ -25,7 +25,7 @@
   button.primary { background:var(--brand); color:#fff; border:0; border-radius:999px; padding:9px 18px; font:inherit; font-weight:600; cursor:pointer; }
   button.ghost { background:none; border:1px solid var(--line); border-radius:999px; padding:8px 16px; font:inherit; cursor:pointer; }
   button:disabled { opacity:.5; cursor:not-allowed; }
-  input[type=text], textarea { width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font:inherit; background:#fff; }
+  input[type=text], input[type=number], textarea { width:100%; border:1px solid var(--line); border-radius:10px; padding:9px 12px; font:inherit; background:#fff; }
   .call { display:grid; gap:16px; grid-template-columns:3fr 2fr; }
   @media (max-width:800px) { .call { grid-template-columns:1fr; } }
   #chat { height:420px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:4px; }
@@ -68,6 +68,17 @@
   .subtabs button[aria-selected="true"] { background:var(--brand); color:#fff; border-color:var(--brand); }
   .metric-head { display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
   .metric-head span:first-of-type { color:var(--brand); font-weight:600; }
+  .tag.own { background:#e8f7ee; color:var(--good); }
+  .goals { font-size:13px; color:var(--brand); margin:0 0 12px; }
+  .chips { display:flex; gap:8px; flex-wrap:wrap; }
+  .chip { background:#fff; border:1px solid var(--line); border-radius:999px; padding:6px 14px; font:inherit; cursor:pointer; }
+  .chip:hover { border-color:var(--brand); color:var(--brand); }
+  .editor h3 { margin-top:4px; } .editor section { margin-bottom:16px; }
+  .editor label { display:block; font-size:13px; color:var(--muted); margin:10px 0 4px; }
+  .editor .two { display:grid; gap:12px; grid-template-columns:1fr 1fr; } @media (max-width:700px) { .editor .two { grid-template-columns:1fr; } }
+  .goal-row { display:grid; gap:8px; grid-template-columns:2fr 3fr 130px auto; align-items:center; margin-bottom:8px; }
+  @media (max-width:700px) { .goal-row { grid-template-columns:1fr; } }
+  textarea { resize:vertical; }
   .verdict { margin-left:auto; font-size:11px; padding:2px 10px; border-radius:999px; }
   .verdict.good { background:#e8f7ee; color:var(--good); } .verdict.watch { background:#fff4e0; color:var(--mixed); }
 </style>
@@ -77,6 +88,7 @@
   <h1>Saarthi</h1>
   <nav class="hidden">
     <button data-tab="practice" aria-current="page">Practice</button>
+    <button data-tab="build">Build</button>
     <button data-tab="history">History</button>
     <button data-tab="setup" class="hidden">Setup</button>
   </nav>
@@ -134,6 +146,8 @@
     <div id="report" class="hidden"></div>
   </section>
 
+  <section id="tab-build" class="hidden"><div id="builder"></div></section>
+
   <section id="tab-history" class="hidden">
     <h2>History</h2>
     <p class="lede">Every practice call, the trend on each marker, and your average on each behaviour.</p>
@@ -148,15 +162,6 @@
       <h3>Product facts</h3>
       <textarea id="product" rows="14"></textarea>
       <div class="row"><button class="primary" id="save-product">Save product facts</button><span id="product-saved" class="muted"></span></div>
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <h3>New customer scenario</h3>
-      <p class="muted">Describe the customer in a sentence. The coach drafts the rest.</p>
-      <form id="new-scenario" class="row">
-        <input id="scenario-desc" type="text" placeholder="e.g. A restaurant owner who thinks bookkeeping software is only for big companies">
-        <button class="primary">Draft scenario</button>
-      </form>
-      <p id="scenario-saved" class="muted"></p>
     </div>
     <div class="card" style="margin-bottom:16px">
       <h3>Quality markers</h3>
@@ -195,6 +200,7 @@
 
 <script src="/voice.js"></script>
 <script src="/report.js"></script>
+<script src="/builder.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...kids) => {
@@ -281,7 +287,12 @@ async function api(path, options = {}) {
   if (res.status === 401) { location.reload(); throw new Error("Please sign in again."); }
   if (!res.ok) {
     let detail = res.statusText;
-    try { const body = await res.json(); if (typeof body.detail === "string") detail = body.detail; } catch {}
+    try {
+      const body = await res.json();
+      if (typeof body.detail === "string") detail = body.detail;
+      else if (Array.isArray(body.detail))  // validation errors: name the field and the problem
+        detail = body.detail.map((d) => `${(d.loc || []).filter((x) => x !== "body").join(" › ")}: ${d.msg}`).join("; ");
+    } catch {}
     throw new Error(detail);
   }
   return res.json();
@@ -299,7 +310,8 @@ function showTab(name) {
   clearError();
   document.querySelectorAll("nav button").forEach((b) => b.toggleAttribute("aria-current", false));
   document.querySelector(`nav button[data-tab="${name}"]`).setAttribute("aria-current", "page");
-  for (const t of ["practice", "history", "setup"]) $("tab-" + t).classList.toggle("hidden", t !== name);
+  for (const t of ["practice", "build", "history", "setup"]) $("tab-" + t).classList.toggle("hidden", t !== name);
+  if (name === "build") loadBuilder().catch(fail);
   if (name === "history") loadHistory().catch(fail);
 }
 
@@ -315,10 +327,17 @@ async function loadConfig() {
   for (const s of cfg.scenarios) {
     const start = el("button", { className: "primary", textContent: "Start call" });
     start.addEventListener("click", () => startCall(s.id).catch(fail));
-    list.append(el("div", { className: "card" },
-      el("span", { className: "tag", textContent: s.difficulty }),
+    const tags = el("div", { className: "row", style: "margin:0" }, el("span", { className: "tag", textContent: s.difficulty }));
+    if (s.mine) tags.append(el("span", { className: "tag own", textContent: s.published ? "Yours · shared" : "Yours · private" }));
+    else if (!s.built_in) tags.append(el("span", { className: "tag own", textContent: "Team" }));
+    const who = s.customer_role ? `${s.customer_name} · ${s.customer_role}` : s.customer_name;
+    const card = el("div", { className: "card" }, tags,
       el("h3", { textContent: s.title, style: "margin-top:8px" }),
-      el("p", { className: "muted", textContent: s.public_brief }), start));
+      el("p", { className: "muted", style: "margin:0 0 6px", textContent: who }),
+      el("p", { className: "muted", textContent: s.public_brief }));
+    if (s.goals?.length) card.append(el("p", { className: "goals", textContent: "Scored on: " + s.goals.join(", ") }));
+    card.append(start);
+    list.append(card);
   }
   const table = $("markers"); table.replaceChildren(
     el("tr", {}, ...["Marker", "Kind", "What is scored", ""].map((h) => el("th", { textContent: h }))));
@@ -362,15 +381,6 @@ $("new-marker").addEventListener("submit", async (e) => {
     $("marker-name").value = ""; $("marker-lines").value = ""; $("marker-question").value = "";
     await loadConfig();
   } catch (err) { fail(err); }
-});
-$("new-scenario").addEventListener("submit", async (e) => {
-  e.preventDefault(); clearError();
-  $("scenario-saved").textContent = "Drafting…";
-  try {
-    const s = await api("/api/scenarios", { method: "POST", body: JSON.stringify({ description: $("scenario-desc").value }) });
-    $("scenario-saved").textContent = `Added "${s.title}". Find it under Practice.`;
-    $("scenario-desc").value = ""; await loadConfig();
-  } catch (err) { $("scenario-saved").textContent = ""; fail(err); }
 });
 
 // Voice call: the ring, the customer's voice and hands-free listening come from /voice.js.

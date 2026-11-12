@@ -82,10 +82,11 @@ def survey_schema(survey_ids: list[str]) -> dict:
 
 
 def scenario_schema() -> dict:
-    """A practice scenario drafted from one sentence."""
+    """A practice roleplay drafted from a sentence or two."""
     customer = _obj(
         {
             "name": _STR,
+            "role": _STR,
             "persona": _STR,
             "mood": _STR,
             "situation": _STR,
@@ -101,5 +102,10 @@ def scenario_schema() -> dict:
             "public_brief": _STR,
             "customer": customer,
             "opening_line": _STR,
+            "minutes": {"type": "integer"},
+            "goals": {
+                "type": "array",
+                "items": _obj({"name": _STR, "description": _STR, "weight": {"type": "integer"}}),
+            },
         }
     )

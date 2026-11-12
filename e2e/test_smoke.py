@@ -198,3 +198,35 @@ def test_hands_free_call_listens_sends_and_listens_again(base_url: str) -> None:
         expect(page.locator("#report h2", has_text="Call complete")).to_be_visible()
         expect(page.locator("#clock")).to_have_text("")
         browser.close()
+
+
+def test_build_a_roleplay_from_a_template_and_practise_it(page: Page) -> None:
+    _sign_in(page, "agent@example.com")
+    page.evaluate("document.getElementById('hands-free').checked = false")
+    page.click('nav button[data-tab="build"]')
+    expect(page.locator("#builder h2")).to_have_text("What's your roleplay about?")
+    page.locator(".chip", has_text="Cold sales call").click()
+    expect(page.locator("#rp-title")).to_have_value("Cold sales call")
+    expect(page.locator("#rp-goals .goal-row")).to_have_count(3)
+    page.fill("#rp-title", "My cold call")
+    page.click("#rp-save")
+    expect(page.locator("#rp-list")).to_contain_text("My cold call")
+    expect(page.locator("#rp-list")).to_contain_text("Only you")
+    page.locator("#rp-list tr", has_text="My cold call").locator(
+        "button", has_text="Practise"
+    ).click()
+    expect(page.locator("#call-title")).to_have_text("Call with Sanjay")
+    page.uncheck("#speak")
+    _say(page, "Hi Sanjay, I'll be quick. How do you track stock today?", 1)
+    page.click("#end")
+    expect(page.locator("#report .tile", has_text="Roleplay goals")).to_be_visible()
+
+
+@pytest.mark.allow_console("status of 422")  # the refused save itself
+def test_builder_shows_what_is_wrong_with_a_roleplay(page: Page) -> None:
+    _sign_in(page, "agent@example.com")
+    page.click('nav button[data-tab="build"]')
+    page.locator(".chip", has_text="Inbound discovery").click()
+    page.fill("#rp-title", "")
+    page.click("#rp-save")
+    expect(page.locator("#error")).to_contain_text("title")

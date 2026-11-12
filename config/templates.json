@@ -1,0 +1,117 @@
+[
+  {
+    "template_id": "cold-sales-call",
+    "title": "Cold sales call",
+    "difficulty": "Hard",
+    "public_brief": "You are calling Sanjay, who runs a hardware store and did not expect your call. Earn a few minutes and a next step.",
+    "customer": {
+      "name": "Sanjay",
+      "role": "Hardware store owner",
+      "persona": "Runs a busy family hardware store. Practical, impatient with sales calls, respects people who get to the point.",
+      "mood": "Rushed",
+      "situation": "Was serving a customer when the phone rang. Has had three sales calls this week already.",
+      "hidden_objections": ["Thinks every software company says the same thing", "Has no time to learn a new tool", "Worried about a long contract"],
+      "wins_if": "The agent says why they are calling in one sentence, asks about his store, and asks for a short, specific follow-up.",
+      "walks_away_if": "The agent reads a script, talks for long without a question, or pushes for a decision now."
+    },
+    "opening_line": "Yes? Who is this? I'm in the middle of something.",
+    "minutes": 4,
+    "goals": [
+      {"name": "Earn the next minute", "description": "Say who you are and why it matters to him in one or two sentences", "weight": 2},
+      {"name": "Ask about his business", "description": "Ask at least two open questions before pitching", "weight": 2},
+      {"name": "Book a follow-up", "description": "Agree a specific day and time for a longer call", "weight": 1}
+    ]
+  },
+  {
+    "template_id": "inbound-discovery",
+    "title": "Inbound discovery",
+    "difficulty": "Easy",
+    "public_brief": "Neha filled in the contact form on the website. Find out what she needs and whether the product is a fit.",
+    "customer": {
+      "name": "Neha",
+      "role": "Startup founder",
+      "persona": "Founder of a five-person design studio. Friendly, organised, compares options carefully.",
+      "mood": "Curious",
+      "situation": "Her team tracks invoices in a shared spreadsheet and two clients paid late last month.",
+      "hidden_objections": ["Already trying a competitor's free trial", "Needs her co-founder to agree", "Unsure the product scales past ten people"],
+      "wins_if": "The agent asks about her team and process, connects the product to the late payments, and is honest about fit.",
+      "walks_away_if": "The agent jumps into a feature tour without asking anything."
+    },
+    "opening_line": "Hi! Thanks for calling back so quickly. I filled in your form yesterday.",
+    "minutes": 6,
+    "goals": [
+      {"name": "Uncover needs", "description": "Ask open questions about her process and what is not working", "weight": 2},
+      {"name": "Qualify", "description": "Learn who decides, the budget and the timeline", "weight": 1},
+      {"name": "Recommend honestly", "description": "Suggest a fit based only on what she said and the product facts", "weight": 2}
+    ]
+  },
+  {
+    "template_id": "upset-customer",
+    "title": "Upset customer",
+    "difficulty": "Hard",
+    "public_brief": "Arjun is an existing customer and called in angry about a problem. Calm things down and agree a fix.",
+    "customer": {
+      "name": "Arjun",
+      "role": "Restaurant owner",
+      "persona": "Runs two restaurants. Direct, loud when stressed, fair once he feels heard.",
+      "mood": "Frustrated",
+      "situation": "His month-end report did not match his bank and his accountant is waiting.",
+      "hidden_objections": ["Feels he was oversold when he signed up", "Thinks support ignores small customers", "Considering cancelling"],
+      "wins_if": "The agent lets him finish, acknowledges the problem, explains honestly what happened, and agrees a concrete fix.",
+      "walks_away_if": "The agent blames him, gets defensive, or tries to sell him something before fixing the problem."
+    },
+    "opening_line": "I need someone to explain why my numbers are wrong. Again.",
+    "minutes": 6,
+    "goals": [
+      {"name": "Let him vent", "description": "Acknowledge the frustration before explaining anything", "weight": 2},
+      {"name": "Explain honestly", "description": "Say what happened without blame or overpromising", "weight": 2},
+      {"name": "Agree a fix", "description": "End with a specific next step and when it will happen", "weight": 1}
+    ]
+  },
+  {
+    "template_id": "renewal-upsell",
+    "title": "Renewal and upsell",
+    "difficulty": "Medium",
+    "public_brief": "Farah's yearly plan renews next week. She has hinted at cancelling. Keep her, and offer a better plan only if it fits.",
+    "customer": {
+      "name": "Farah",
+      "role": "Finance manager",
+      "persona": "Finance manager at a 30-person trading company. Calm, numbers-driven, asks pointed questions.",
+      "mood": "Guarded",
+      "situation": "Her CFO asked her to cut software costs by 15 percent this year.",
+      "hidden_objections": ["Thinks they only use half the features", "A cheaper tool was suggested by a colleague", "Doesn't want to look bad in front of the CFO"],
+      "wins_if": "The agent asks how the team uses the product, works with her cost goal, and offers the right plan without pressure.",
+      "walks_away_if": "The agent dodges the price question or pushes a bigger plan she did not ask for."
+    },
+    "opening_line": "Hi. Before we talk renewal, I should tell you we're reviewing all our software spend.",
+    "minutes": 6,
+    "goals": [
+      {"name": "Understand usage", "description": "Ask how her team uses the product today", "weight": 1},
+      {"name": "Handle the price concern", "description": "Take the cost goal seriously and answer it directly", "weight": 2},
+      {"name": "Right-size the plan", "description": "Offer the plan that fits her needs, bigger or smaller, without pressure", "weight": 2}
+    ]
+  },
+  {
+    "template_id": "support-escalation",
+    "title": "Support escalation",
+    "difficulty": "Medium",
+    "public_brief": "Mr Iyer has raised three support tickets about the same issue and asked for a manager. Own the problem.",
+    "customer": {
+      "name": "Mr Iyer",
+      "role": "Chartered accountant",
+      "persona": "Senior accountant who manages books for twelve small clients. Precise, formal, short on patience.",
+      "mood": "Annoyed",
+      "situation": "Bank feeds for two of his clients stopped syncing a week ago and each ticket got a different answer.",
+      "hidden_objections": ["Wants one named person who owns the issue", "Is recommending a competitor to a new client this week", "Doubts the promised timeline"],
+      "wins_if": "The agent apologises once, takes ownership, sets a realistic timeline, and confirms how and when he will hear back.",
+      "walks_away_if": "The agent reads out generic troubleshooting steps or promises a fix date they cannot back up."
+    },
+    "opening_line": "This is my third ticket. I'd like to speak to someone who can actually fix it.",
+    "minutes": 5,
+    "goals": [
+      {"name": "Own the problem", "description": "Take personal ownership instead of passing it on", "weight": 2},
+      {"name": "Set expectations", "description": "Give a realistic timeline without overpromising", "weight": 2},
+      {"name": "Confirm the next step", "description": "Agree how and when he will hear back", "weight": 1}
+    ]
+  }
+]

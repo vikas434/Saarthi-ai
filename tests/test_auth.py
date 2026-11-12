@@ -77,7 +77,7 @@ def test_setup_routes_are_admin_only(agent1):
         agent1.post("/api/markers", json={"name": "Nope", "type": "checklist"}).status_code == 403
     )
     assert agent1.delete("/api/markers/custom-x").status_code == 403
-    assert agent1.post("/api/scenarios", json={"description": "A busy owner"}).status_code == 403
+    assert agent1.post("/api/roleplays/x/publish", json={"published": True}).status_code == 403
     assert agent1.get("/api/access-requests").status_code == 403
 
 

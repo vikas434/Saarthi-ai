@@ -227,8 +227,9 @@ def test_product_and_scenario_setup(client):
     text = "Acme CRM. Rs 500 per user per month. 14-day trial. No refunds."
     assert client.put("/api/product", json={"text": text}).status_code == 200
     assert client.get("/api/config").json()["product"] == text
-    made = client.post("/api/scenarios", json={"description": "A doctor who hates software"}).json()
-    assert made["id"].startswith("custom-")
+    draft = client.post("/api/roleplays/draft", json={"description": "A doctor who hates software"})
+    made = client.post("/api/roleplays", json=draft.json()).json()
+    assert made["id"].startswith("rp-")
     assert any(s["id"] == made["id"] for s in client.get("/api/config").json()["scenarios"])
     assert client.post("/api/sessions", json={"scenario_id": made["id"]}).status_code == 200
 

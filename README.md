@@ -9,6 +9,7 @@ Practise customer calls with an AI customer. A coach comments on every reply, an
 ## What it does
 
 1. **Pick a customer.** Each scenario has a short brief for the agent; the customer's real concerns stay hidden.
+   **Or build your own** in the Build tab: describe the call and the AI drafts it, or start from a template (cold call, inbound discovery, upset customer, renewal, support escalation). Edit the persona, context, goals (scored on the scorecard), hidden objections and time limit. Your roleplays are private; the admin can publish one to everyone.
 2. **Talk.** Hands-free by default in Chrome: the phone rings, the customer speaks first, and Saarthi listens after each line; pause to send. Typing always works. Each call has a time limit (6 minutes unless the roleplay sets one) and ends itself when time runs out.
 3. **Get coached live.** After each reply the coach names one behaviour (good, mixed or improve), quotes you, and suggests a better line. Product claims are checked against the product facts.
 4. **End the call.** The coach scores every behaviour and checklist item while the customer answers the survey, in parallel. The scorecard opens with one overall score, then two tabs: **Coaching** (summary, next drill, every marker, questions to prepare for, and the transcript with a better line under each reply that needed one) and **Analytics** (filler and weak words, sentence starters, reply length, talk time, longest reply, questions asked, and pace for spoken replies; worked out in code, no model cost).
@@ -73,6 +74,7 @@ All configuration is environment variables; `.env.example` lists every one.
 | `AUTH_DEV_BYPASS` | Local sign-in by typing an allow-listed email |
 | `DAILY_SPEND_CAP_USD`, `MAX_CALLS_PER_USER_PER_DAY`, `RATE_LIMIT_PER_MINUTE` | Cost guards (staging: $2, 10, 60) |
 | `MAX_REPLIES_PER_CALL` | Agent replies per call before it must be scored (default 14) |
+| `MAX_ROLEPLAYS_PER_USER`, `MAX_PERSONAS_PER_USER` | Saved roleplays and personas per person (default 20 each) |
 | `FORCE_HTTPS`, `PORT` | Hosting: HTTPS redirect and HSTS behind a proxy; the port to listen on |
 | `CLERK_JS_VERSION`, `CLERK_UI_VERSION` | Majors of Clerk's browser script (6) and sign-in screens (1) |
 
@@ -87,6 +89,8 @@ One FastAPI app serves the API and a single static page ([ADR 0001](docs/adr/000
 ```
 app/
   main.py          routes; /api needs sign-in (except /api/auth/config)
+  deps.py          who is calling: signed-in person, admin only
+  roleplays.py, roleplay_routes.py  roleplay builder, templates, personas, publishing
   auth.py          Clerk token check, allow-list, roles
   coach.py         customer, live coach, scorecard, survey, scenario drafting
   schemas.py       JSON schemas the model must answer in
@@ -100,7 +104,8 @@ app/
   static/index.html  the whole front end
   static/voice.js    ring, customer voice, hands-free listening (browser speech, no keys)
   static/report.js   the scorecard: banner, Coaching and Analytics tabs
-config/            markers, scenarios, sample product facts, model prices
+  static/builder.js  the Build tab: describe or template, edit, save, publish
+config/            markers, scenarios, roleplay templates, personas, sample product facts, model prices
 evals/             strong and weak agent scripts for python -m app.evals
 tests/, e2e/       unit tests and the browser smoke test
 ```
