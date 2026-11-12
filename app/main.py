@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Annotated
 
@@ -9,11 +11,28 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
-from app import auth, coach, limits, store, usage
+from app import auth, coach, db, limits, store, usage
 from app.auth import AuthError, Principal
 from app.limits import LimitReached
+from app.web_security import SecurityMiddleware
 
-app = FastAPI(title="Saarthi", version="0.2.0")
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Migrate on start, so a broken database fails the deploy instead of the first visitor."""
+    db.engine()
+    yield
+
+
+app = FastAPI(
+    title="Saarthi",
+    version="0.2.0",
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
+app.add_middleware(SecurityMiddleware)
 STATIC = Path(__file__).parent / "static"
 
 
@@ -75,12 +94,22 @@ Admin = Annotated[Principal, Depends(admin_user)]
 
 @app.get("/health")
 def health() -> dict:
+    """Alive: the process answers."""
     return {"status": "ok"}
+
+
+@app.get("/ready")
+def ready() -> JSONResponse:
+    """Ready: the database answers too."""
+    if db.ping():
+        return JSONResponse({"status": "ready"})
+    return JSONResponse({"status": "database unreachable"}, status_code=503)
 
 
 @app.get("/")
 def index() -> FileResponse:
-    return FileResponse(STATIC / "index.html")
+    # Always revalidate, so a new deploy is seen on the next load.
+    return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/api/auth/config")
