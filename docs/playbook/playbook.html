@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Saarthi Playbook</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 18mm; }
+  :root { --brand:#5b3df5; --brand-soft:#f1eeff; --ink:#1c1b29; --muted:#5f5e70; --line:#e3e2ec; --good:#17804a; --good-soft:#e8f7ee; --warn:#a86400; --warn-soft:#fff4e0; }
+  * { box-sizing: border-box; }
+  body { margin:0; font: 10.5pt/1.55 -apple-system, "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  h1, h2, h3 { line-height: 1.2; margin: 0; }
+  h2 { font-size: 20pt; margin-bottom: 4mm; }
+  h3 { font-size: 12.5pt; margin: 4mm 0 2mm; }
+  p { margin: 0 0 3mm; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .kicker { color: var(--brand); font-weight: 700; font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 2mm; }
+  .lede { font-size: 11.5pt; color: var(--muted); margin-bottom: 4mm; }
+  .shot { width: auto; max-width: 100%; max-height: 88mm; border: 1px solid var(--line); border-radius: 3mm; box-shadow: 0 1.5mm 5mm rgba(28,27,41,.10); display: block; margin: 2mm auto 4mm; }
+  .shot.short { max-height: 70mm; }
+  .cover .shot { max-height: none; width: 100%; }
+  .caption { font-size: 8.5pt; color: var(--muted); margin: -2mm 0 4mm; }
+  .steps { counter-reset: step; list-style: none; padding: 0; margin: 0 0 4mm; }
+  .steps li { counter-increment: step; position: relative; padding-left: 9mm; margin-bottom: 2.2mm; }
+  .steps li::before { content: counter(step); position: absolute; left: 0; top: 0.2mm; width: 6mm; height: 6mm; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 700; font-size: 8.5pt; display: flex; align-items: center; justify-content: center; }
+  .tip { background: var(--brand-soft); border-left: 1.2mm solid var(--brand); border-radius: 0 2mm 2mm 0; padding: 3mm 4mm; margin: 3mm 0 4mm; font-size: 10pt; }
+  .tip b:first-child { color: var(--brand); }
+  .note { background: var(--warn-soft); border-left: 1.2mm solid var(--warn); border-radius: 0 2mm 2mm 0; padding: 3mm 4mm; margin: 3mm 0; font-size: 10pt; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; }
+  .card { border: 1px solid var(--line); border-radius: 3mm; padding: 3mm 3.5mm; }
+  .card h4 { margin: 0 0 1.5mm; font-size: 11pt; }
+  .card p { margin: 0; font-size: 9.8pt; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; font-size: 9.8pt; margin: 2mm 0 4mm; }
+  th, td { text-align: left; padding: 1.7mm 2.5mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #f6f6fa; font-weight: 600; }
+  td.yes { color: var(--good); font-weight: 600; } td.no { color: var(--muted); }
+  .pill { display: inline-block; font-size: 8.5pt; padding: 0.4mm 2.5mm; border-radius: 99px; background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+  /* Cover */
+  .cover { display: flex; flex-direction: column; height: 260mm; }
+  .cover .brand { font-size: 13pt; font-weight: 800; color: var(--brand); letter-spacing: .02em; }
+  .cover h1 { font-size: 34pt; margin: 14mm 0 4mm; }
+  .cover .sub { font-size: 14pt; color: var(--muted); max-width: 150mm; }
+  .cover .shot { margin-top: 10mm; }
+  .cover .meta { margin-top: auto; display: flex; justify-content: space-between; color: var(--muted); font-size: 9.5pt; border-top: 1px solid var(--line); padding-top: 4mm; }
+  .cover .url { color: var(--brand); font-weight: 700; }
+  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3mm; margin: 4mm 0 6mm; }
+  .flow .card { text-align: center; padding: 3.5mm 2.5mm; }
+  .flow .n { width: 8mm; height: 8mm; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto 2mm; }
+  .flow b { display: block; font-size: 10.5pt; } .flow span { font-size: 8.8pt; color: var(--muted); }
+  .script td:first-child { width: 22mm; font-weight: 700; color: var(--brand); white-space: nowrap; }
+  .script td:nth-child(2) { width: 45mm; font-weight: 600; }
+  .say { font-style: italic; color: var(--ink); }
+  dl { margin: 0; } dt { font-weight: 700; margin-top: 3mm; } dd { margin: 0.5mm 0 0; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- 1. Cover -->
+<section class="page cover">
+  <div class="brand">SAARTHI</div>
+  <h1>Playbook</h1>
+  <p class="sub">Practise real customer calls with an AI customer and a coach that tells you, line by line, how to do better.</p>
+  <img class="shot" src="img/02-live-call.jpg" alt="A practice call: the AI customer on the left, live coach notes on the right">
+  <div class="meta">
+    <span>Try it: <span class="url">saarthi-staging.onrender.com</span> (Chrome works best)</span>
+    <span>Demo edition · November 2026</span>
+  </div>
+</section>
+
+<!-- 2. What it is -->
+<section class="page">
+  <div class="kicker">Overview</div>
+  <h2>What Saarthi does</h2>
+  <p class="lede">Sales and support people learn by talking to customers. Saarthi lets them practise those conversations safely, as often as they like, and get honest coaching after every reply instead of waiting for a manager to listen in.</p>
+
+  <div class="grid2">
+    <div class="card"><h4>A realistic AI customer</h4><p>Each customer has a personality, a mood and hidden worries they only raise if you ask the right questions. They react to what you actually say, and can speak with a natural human voice.</p></div>
+    <div class="card"><h4>A coach on every reply</h4><p>After each thing you say, the coach names one behaviour (good, mixed or needs work), quotes your words, and suggests a better line.</p></div>
+    <div class="card"><h4>A scorecard after every call</h4><p>One overall score, the team's quality markers, what went well, what to work on, questions to prepare for, and a better version of each line you said.</p></div>
+    <div class="card"><h4>Progress you can see</h4><p>A dashboard tracks scores and speaking habits over time, keeps a practice streak, and gives managers a team view.</p></div>
+  </div>
+
+  <h3>The five-step flow</h3>
+  <div class="flow">
+    <div class="card"><div class="n">1</div><b>Sign in</b><span>Google or an emailed code</span></div>
+    <div class="card"><div class="n">2</div><b>Pick a customer</b><span>Or build your own</span></div>
+    <div class="card"><div class="n">3</div><b>Talk</b><span>Speak or type</span></div>
+    <div class="card"><div class="n">4</div><b>Get scored</b><span>Coaching and analytics</span></div>
+    <div class="card"><div class="n">5</div><b>Improve</b><span>Track it on the dashboard</span></div>
+  </div>
+
+  <h3>Who can do what</h3>
+  <table>
+    <tr><th>Feature</th><th>Admin (the trainer)</th><th>Agent (everyone who practises)</th></tr>
+    <tr><td>Practice calls, tutor, scorecards</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+    <tr><td>Build your own roleplays and personas</td><td class="yes">Yes</td><td class="yes">Yes, private to them</td></tr>
+    <tr><td>Publish a roleplay to everyone</td><td class="yes">Yes</td><td class="no">No</td></tr>
+    <tr><td>See calls</td><td class="yes">Everyone's</td><td>Only their own</td></tr>
+    <tr><td>Dashboard</td><td class="yes">Own trends plus a team table</td><td>Own trends</td></tr>
+    <tr><td>Setup: product facts, quality markers, who joined</td><td class="yes">Yes</td><td class="no">Hidden</td></tr>
+  </table>
+</section>
+
+<!-- 3. Pick a customer -->
+<section class="page">
+  <div class="kicker">Step 1 · Practice tab</div>
+  <h2>Pick a customer</h2>
+  <p class="lede">The Practice tab lists the customers you can call. Each card says who they are, how hard the call is, and what you know before you dial.</p>
+  <img class="shot" src="img/01-pick-customer.jpg" alt="The Practice tab with three customer cards">
+  <ol class="steps">
+    <li>Type your name in <b>Your name</b> (optional; it shows on your scorecard).</li>
+    <li>Leave <b>Hands-free voice</b> ticked to talk out loud, or untick it to type your replies.</li>
+    <li>Read the card: difficulty (Easy, Medium, Hard), the customer's name and role, and the brief.</li>
+    <li>Press <b>Start call</b>, or <b>Learn first</b> for a two-minute product lesson before the call.</li>
+  </ol>
+  <div class="tip"><b>Tip.</b> "Practice calls left today" shows how many of your 10 daily calls remain. A Learn first lesson counts as one.</div>
+  <div class="note"><b>First visit.</b> A welcome note explains that practice calls are saved and the admin can read them, so never use real customer names or details.</div>
+</section>
+
+<!-- 4. The call -->
+<section class="page">
+  <div class="kicker">Step 2 · The call</div>
+  <h2>Talk to the customer</h2>
+  <p class="lede">It works like a phone call. The customer speaks first, you answer, they react, and a coach comments quietly on the right.</p>
+  <img class="shot" src="img/02-live-call.jpg" alt="A call in progress with coach notes">
+  <h3>Hands-free (talking out loud)</h3>
+  <ol class="steps">
+    <li>The phone rings and the customer says their opening line aloud.</li>
+    <li>Just talk. When you pause for a moment, your reply is sent by itself. Press <b>■ Done</b> to send straight away.</li>
+    <li>The customer answers aloud, the coach adds a note, and Saarthi listens again.</li>
+  </ol>
+  <h3>Typing instead</h3>
+  <p>Type in the box and press <b>Send</b>. You can switch between talking and typing at any point.</p>
+  <div class="grid2">
+    <div class="tip" style="margin:0"><b>The coach panel.</b> Green means good, amber mixed, red needs work. Each note quotes you and often gives a "Try:" line to say instead. Untick <b>Live coaching</b> to hide it during the call.</div>
+    <div class="tip" style="margin:0"><b>Time limit.</b> "Time left" counts down (usually 6 minutes). At zero, the call wraps up and is scored. It also ends when the customer hangs up.</div>
+  </div>
+</section>
+
+<!-- 5. Scorecard -->
+<section class="page">
+  <div class="kicker">Step 3 · After the call</div>
+  <h2>Your scorecard</h2>
+  <p class="lede">Press <b>End call and score</b>. Scoring takes 15 to 30 seconds while the coach scores the call and the customer fills in a survey, in character.</p>
+  <img class="shot" src="img/04-scorecard.jpg" alt="The scorecard: overall score, marker tiles, what went well, what to work on, questions to prepare for">
+  <h3>How to read it</h3>
+  <table>
+    <tr><th style="width:34mm">What you see</th><th>What it means</th></tr>
+    <tr><td><b>Your score</b></td><td>One number for the call: the average of all the markers below.</td></tr>
+    <tr><td><b>SQS</b></td><td>Sales Quality Score. The coach scores behaviours like empathy, discovery, honesty and a clear next step, 1 to 5 each, with your own words as evidence.</td></tr>
+    <tr><td><b>tNPS and ProSat</b></td><td>The customer's own survey answers: would they recommend us (0 to 10), and how satisfied they are with the product (1 to 5). Each comes with their reason, in their words.</td></tr>
+    <tr><td><b>Call checklist</b></td><td>Must-do items, such as greeting by name and making no false promises. Red means a critical item was missed.</td></tr>
+    <tr><td><b>Next drill</b></td><td>The one thing to practise in your next call.</td></tr>
+    <tr><td><b>Questions to prepare for</b></td><td>What this customer is likely to ask next time.</td></tr>
+  </table>
+</section>
+
+<!-- 6. Better lines + analytics -->
+<section class="page">
+  <div class="kicker">Step 3 · After the call</div>
+  <h2>Say it better, and how you sounded</h2>
+  <p class="lede">At the bottom of the Coaching tab, the transcript shows a better version under each line that needed one.</p>
+  <img class="shot short" src="img/07-better-lines.jpg" alt="Transcript with Say it better lines">
+  <h3>The Analytics tab</h3>
+  <p>Switch to <b>Analytics</b> for your speaking habits. These are counted from the transcript, so they are instant and cost nothing.</p>
+  <img class="shot" src="img/06-analytics.jpg" alt="Analytics tab: filler words, weak words, talk time, questions asked">
+  <div class="tip"><b>Good to know.</b> Pace (words per minute) only appears when you <i>speak</i> your replies. Each row is marked <span class="pill">Good</span> or "Work on" with a one-line reason.</div>
+</section>
+
+<!-- 7. Build -->
+<section class="page">
+  <div class="kicker">Build tab</div>
+  <h2>Build your own roleplay</h2>
+  <p class="lede">Practise the exact conversations your team faces. Describe the customer in a sentence and the AI drafts the whole roleplay, or start from a template.</p>
+  <img class="shot" src="img/08-build-home.jpg" alt="Build tab: describe your roleplay, templates">
+  <ol class="steps">
+    <li>Open <b>Build</b> and describe the customer and situation in plain words.</li>
+    <li>Press <b>Create with AI</b>. In a few seconds you get a full draft to review.</li>
+    <li>Or pick a template: <b>Cold sales call</b>, <b>Inbound discovery</b>, <b>Upset customer</b>, <b>Renewal and upsell</b>, <b>Support escalation</b>.</li>
+  </ol>
+  <img class="shot" src="img/09-editor-top.jpg" alt="The roleplay editor: description and persona">
+</section>
+
+<!-- 8. Editor sections -->
+<section class="page">
+  <div class="kicker">Build tab</div>
+  <h2>Review, save, practise</h2>
+  <img class="shot" src="img/10-editor-goals.jpg" alt="Editor: goals with weights and hidden objections">
+  <table>
+    <tr><th style="width:36mm">Section</th><th>What to check</th></tr>
+    <tr><td><b>Description</b></td><td>The title, difficulty, and the brief the person practising will read.</td></tr>
+    <tr><td><b>Persona</b></td><td>Who the AI plays: name, role, temperament and voice. Pick one from the library to fill it in, or tick "Save this persona" to reuse it.</td></tr>
+    <tr><td><b>Context</b></td><td>The customer's situation, what warms them up, and what makes them walk away.</td></tr>
+    <tr><td><b>Goals</b></td><td>Up to 6 things this roleplay is scored on. Higher weight counts more. They appear as a "Roleplay goals" score on the scorecard.</td></tr>
+    <tr><td><b>Hidden objections</b></td><td>Worries the customer only raises when the conversation gets there. Never shown to the person practising.</td></tr>
+    <tr><td><b>Conversation</b></td><td>The customer's first words and the time limit.</td></tr>
+  </table>
+  <div class="tip"><b>Private by default.</b> Your roleplays are visible only to you. The admin can <b>Publish</b> one so everyone sees it under Practice.</div>
+</section>
+
+<!-- 9. Tutor -->
+<section class="page">
+  <div class="kicker">Learn first</div>
+  <h2>Learn the facts before the call</h2>
+  <p class="lede">Press <b>Learn first</b> on any customer card. The tutor teaches the product facts that matter for <i>that</i> call, then asks three questions the customer may ask.</p>
+  <img class="shot" src="img/12-tutor-lesson.jpg" alt="Tutor lesson tailored to the call">
+  <ol class="steps">
+    <li>Read the lesson, or press <b>🔊 Read aloud</b>.</li>
+    <li>Press <b>I'm ready for the questions</b>. Answer each one by typing or speaking.</li>
+    <li>You get ✓ Right or ✗ Not quite, a reason, and a model answer.</li>
+    <li>After three questions, press <b>Start the roleplay</b> to go straight into the call.</li>
+  </ol>
+  <img class="shot short" src="img/13-tutor-answer.jpg" alt="A tutor answer marked Not quite with a model answer">
+</section>
+
+<!-- 10. Dashboard -->
+<section class="page">
+  <div class="kicker">Dashboard tab</div>
+  <h2>See your progress</h2>
+  <img class="shot" src="img/14-dashboard.jpg" alt="Dashboard: streak, insights and focus charts">
+  <ol class="steps">
+    <li><b>Practice streak</b>, calls this week, and scored calls are at the top.</li>
+    <li><b>Insights</b> sum up your progress in plain sentences, for example "Your overall score rose from 16% to 58% over 3 calls".</li>
+    <li><b>Your focus</b> shows up to four charts against a dashed target line. Press <b>Choose focus</b> to pick what to follow: overall score, filler words, pace, talk time, questions asked, or any marker.</li>
+  </ol>
+  <h3>For the admin: the team view</h3>
+  <img class="shot" src="img/15-team.jpg" alt="Team table with each person's calls and progress">
+  <p>Each person's calls, last practice, average score, and first-to-latest score (green when improving). All calls are listed below; click one to open its scorecard.</p>
+</section>
+
+<!-- 11. Setup -->
+<section class="page">
+  <div class="kicker">Admin only · Setup tab</div>
+  <h2>Set it up for your team</h2>
+  <img class="shot" src="img/16-setup.jpg" alt="Setup tab: product facts and quality markers">
+  <table>
+    <tr><th style="width:38mm">Setting</th><th>What it does</th></tr>
+    <tr><td><b>Product facts</b></td><td>The only truth the AI uses about your product: plans, prices, policies, and things never to promise. The coach checks every claim against it. Paste your own to make Saarthi about your product.</td></tr>
+    <tr><td><b>Quality markers</b></td><td>What every call is scored on. Add your own: a checklist (start a line with ! to make it critical), a rubric of behaviours, or a survey question the customer answers.</td></tr>
+    <tr><td><b>People who joined</b></td><td>Everyone who has signed in, with first and last visit.</td></tr>
+  </table>
+  <div class="note"><b>Before sharing widely:</b> replace the sample product (LedgerLeaf) with your own facts, and publish two or three roleplays that match your real calls.</div>
+</section>
+
+<!-- 12. Demo script -->
+<section class="page">
+  <div class="kicker">For your next stakeholder call</div>
+  <h2>A 10-minute demo script</h2>
+  <p class="lede">Share your screen in Chrome and open <b>saarthi-staging.onrender.com</b> a minute early: free hosting sleeps when idle and takes about a minute to wake.</p>
+  <table class="script">
+    <tr><th>Time</th><th>Do</th><th>Say</th></tr>
+    <tr><td>0:00</td><td>Practice tab</td><td class="say">"This is where a new hire practises. Each AI customer has a personality and hidden worries."</td></tr>
+    <tr><td>1:00</td><td>Start "Upset customer"</td><td class="say">"Listen: the customer calls in, angry. I'll answer like a rep would."</td></tr>
+    <tr><td>1:30</td><td>Reply 2 or 3 times; point at the coach</td><td class="say">"After every line, the coach tells me what was good and what to say instead."</td></tr>
+    <tr><td>3:30</td><td>End call and score</td><td class="say">"The customer now answers our real survey questions, tNPS and ProSat, in character."</td></tr>
+    <tr><td>4:00</td><td>Scorecard and Analytics</td><td class="say">"One score, every marker, a better version of each line, and speaking habits."</td></tr>
+    <tr><td>5:30</td><td>Build → Create with AI</td><td class="say">"Any manager can create a new scenario from one sentence, in seconds."</td></tr>
+    <tr><td>7:00</td><td>Learn first on a card</td><td class="say">"Before the call, a tutor teaches the facts and checks understanding."</td></tr>
+    <tr><td>8:30</td><td>Dashboard</td><td class="say">"Progress over time, a streak, and a team view for managers."</td></tr>
+    <tr><td>9:30</td><td>Close</td><td class="say">"It costs about a third of a US cent a call, and it works for sales, support and onboarding."</td></tr>
+  </table>
+  <div class="tip"><b>If something is slow.</b> Scoring takes 15 to 30 seconds and shows a "Scoring your call…" panel. That is a good moment to explain what is being scored.</div>
+</section>
+
+<!-- 13. FAQ -->
+<section class="page">
+  <div class="kicker">Questions people ask</div>
+  <h2>FAQ and words used</h2>
+  <dl>
+    <dt>Which browser should I use?</dt>
+    <dd>Chrome on a laptop. Talking out loud (hands-free) needs Chrome; in other browsers you can type.</dd>
+    <dt>Does the customer sound human?</dt>
+    <dd>Yes, while the monthly voice budget lasts (a natural ElevenLabs voice, matched to each customer). After that, the browser's own voice is used, which sounds more robotic. Calls never stop either way.</dd>
+    <dt>Is my practice private?</dt>
+    <dd>Your calls are visible to you and the admin only. Roleplays you build are private until the admin publishes them. Don't use real customer names or details.</dd>
+    <dt>How many calls can I do?</dt>
+    <dd>10 a day per person. There is also a shared daily budget for the demo; if it runs out, practice reopens the next day at 05:30 IST.</dd>
+    <dt>Does the AI make up product facts?</dt>
+    <dd>The coach and tutor only use the product facts in Setup. If you claim something the facts don't support, the coach marks it down.</dd>
+    <dt>What does it cost?</dt>
+    <dd>About US$0.003 (a third of a cent) per practice call on the AI model. The human voice runs on ElevenLabs' free plan.</dd>
+  </dl>
+  <h3>Words used in Saarthi</h3>
+  <table>
+    <tr><td style="width:36mm"><b>Roleplay</b></td><td>A practice scenario: who the customer is, their situation, goals and hidden objections.</td></tr>
+    <tr><td><b>Persona</b></td><td>The person the AI plays: name, role, temperament, voice.</td></tr>
+    <tr><td><b>Marker</b></td><td>Something every call is scored on (SQS, tNPS, ProSat, checklist, or your own).</td></tr>
+    <tr><td><b>SQS</b></td><td>Sales Quality Score: behaviours scored by the coach.</td></tr>
+    <tr><td><b>tNPS</b></td><td>Transactional Net Promoter Score: "would you recommend us?", answered by the customer.</td></tr>
+    <tr><td><b>ProSat</b></td><td>Product satisfaction, answered by the customer.</td></tr>
+    <tr><td><b>Hidden objection</b></td><td>A worry the customer won't mention unless you ask the right question.</td></tr>
+  </table>
+</section>
+
+</body>
+</html>
