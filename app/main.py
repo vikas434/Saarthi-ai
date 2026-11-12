@@ -128,6 +128,9 @@ def config(user: User) -> dict:
     return {
         "mode": coach.mode(),
         "role": user.role,
+        "open_signup": auth.open_signup(),
+        "calls_per_day": limits.calls_per_day(),
+        "calls_left": limits.calls_left(user.user_id),
         "rubric": coach.load_rubric(),
         "markers": coach.load_markers(),
         "scenarios": [coach.public_scenario(s) for s in coach.load_scenarios()],
@@ -169,7 +172,7 @@ def delete_marker(marker_id: str, _: Admin) -> dict:
 
 @app.get("/api/access-requests")
 def access_requests(_: Admin) -> list[dict]:
-    """Sign-ins from emails outside the allow-list. Access changes only through env."""
+    """Sign-ins from emails outside the allow-list: newcomers with OPEN_SIGNUP, else requests."""
     return store.list_access_requests()
 
 

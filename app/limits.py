@@ -18,9 +18,13 @@ DEFAULT_RATE_LIMIT_PER_MINUTE = 60
 WINDOW_SECONDS = 60.0
 
 SPEND_LIMIT_MESSAGE = (
-    "Daily practice limit reached for today. New calls open again tomorrow (00:00 UTC)."
+    "Daily limit reached: today's free practice is used up for everyone. "
+    "New calls open again tomorrow at 05:30 IST (00:00 UTC)."
 )
-CALLS_LIMIT_MESSAGE = "Daily call limit reached for you. Please practise again tomorrow."
+CALLS_LIMIT_TEMPLATE = (
+    "Daily limit reached: you've had your {n} practice call{s} for today. "
+    "Come back tomorrow for more (from 05:30 IST)."
+)
 RATE_LIMIT_MESSAGE = "Too many requests. Wait a few seconds and try again."
 
 
@@ -44,13 +48,21 @@ def _int_env(name: str, default: int) -> int:
         return default
 
 
+def calls_per_day() -> int:
+    return _int_env("MAX_CALLS_PER_USER_PER_DAY", DEFAULT_MAX_CALLS_PER_USER_PER_DAY)
+
+
+def calls_left(user_id: str) -> int:
+    return max(0, calls_per_day() - usage.calls_today(user_id))
+
+
 def check_new_call(user_id: str) -> None:
     """Raise LimitReached when a new practice call may not start."""
     if usage.spend_today() >= _float_env("DAILY_SPEND_CAP_USD", DEFAULT_DAILY_SPEND_CAP_USD):
         raise LimitReached(SPEND_LIMIT_MESSAGE)
-    max_calls = _int_env("MAX_CALLS_PER_USER_PER_DAY", DEFAULT_MAX_CALLS_PER_USER_PER_DAY)
-    if usage.calls_today(user_id) >= max_calls:
-        raise LimitReached(CALLS_LIMIT_MESSAGE)
+    if calls_left(user_id) <= 0:
+        n = calls_per_day()
+        raise LimitReached(CALLS_LIMIT_TEMPLATE.format(n=n, s="" if n == 1 else "s"))
 
 
 _lock = threading.Lock()

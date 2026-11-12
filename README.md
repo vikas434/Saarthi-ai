@@ -18,15 +18,16 @@ Practise customer calls with an AI customer. A coach comments on every reply, an
 
 ## Who can use it
 
-Sign-in is [Clerk](https://clerk.com), on Clerk's hosted sign-in page (Google or an emailed code). Access is an allow-list in server settings, never in code:
+Sign-in is [Clerk](https://clerk.com), on Clerk's hosted sign-in page (Google or an emailed code). Roles come from server settings, never from code. On staging, sign-up is open: anyone who signs in practises as an agent ([ADR 0004](docs/adr/0004-open-sign-up.md)).
 
 | Role | Who | Can |
 |---|---|---|
 | Admin | `TEACHER_EMAIL` | Every call, Setup (product facts, markers, scenarios), access requests, cost per call |
 | Agent | `STUDENT_EMAILS` (comma-separated) | Own calls only |
-| Anyone else | | Sees only "Your request is received. We will review and approve." and is listed for the admin |
+| Anyone else, with `OPEN_SIGNUP=1` | | Same as an agent; listed for the admin as "People who joined" |
+| Anyone else, sign-up closed | | Sees only "Your request is received. We will review and approve." and is listed for the admin |
 
-To let someone in, add their email to `STUDENT_EMAILS` and restart. Details: [ADR 0003](docs/adr/0003-clerk-sign-in-and-roles.md).
+With sign-up closed, let someone in by adding their email to `STUDENT_EMAILS` and restarting. Details: [ADR 0003](docs/adr/0003-clerk-sign-in-and-roles.md).
 
 ## Markers
 
@@ -67,15 +68,16 @@ All configuration is environment variables; `.env.example` lists every one.
 | `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_BASE_URL` | `openai_compatible` for a company gateway |
 | `DATABASE_URL` | Postgres URL; empty means SQLite at `SAARTHI_DB` |
 | `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_AUTHORIZED_PARTIES` | Clerk application keys and the site origin allowed to use them |
-| `TEACHER_EMAIL`, `STUDENT_EMAILS` | The allow-list |
+| `TEACHER_EMAIL`, `STUDENT_EMAILS` | The admin and the allow-listed agents |
+| `OPEN_SIGNUP` | `1` lets anyone who signs in practise as an agent |
 | `AUTH_DEV_BYPASS` | Local sign-in by typing an allow-listed email |
-| `DAILY_SPEND_CAP_USD`, `MAX_CALLS_PER_USER_PER_DAY`, `RATE_LIMIT_PER_MINUTE` | Cost guards (demo: $0.50, 20, 60) |
+| `DAILY_SPEND_CAP_USD`, `MAX_CALLS_PER_USER_PER_DAY`, `RATE_LIMIT_PER_MINUTE` | Cost guards (staging: $2, 10, 60) |
 | `FORCE_HTTPS`, `PORT` | Hosting: HTTPS redirect and HSTS behind a proxy; the port to listen on |
 | `CLERK_JS_VERSION`, `CLERK_UI_VERSION` | Majors of Clerk's browser script (6) and sign-in screens (1) |
 
 ## Cost and limits
 
-Every model call's tokens and cost go into the `usage` table, priced from `config/pricing.json`. A practice call on Haiku 5.5 costs about $0.0034. When today's spend reaches `DAILY_SPEND_CAP_USD`, or a person reaches `MAX_CALLS_PER_USER_PER_DAY`, new calls stop with a clear message; calls in progress finish. The admin sees each call's cost on its scorecard. If a model reply can't be used, Saarthi retries once, then falls back to the scripted customer and labels it "backup".
+Every model call's tokens and cost go into the `usage` table, priced from `config/pricing.json`. A practice call on Haiku 5.5 costs about $0.0034. When today's spend reaches `DAILY_SPEND_CAP_USD`, or a person reaches `MAX_CALLS_PER_USER_PER_DAY`, new calls stop with a clear message; calls in progress finish. Each person sees how many calls they have left today. The admin sees each call's cost on its scorecard. If a model reply can't be used, Saarthi retries once, then falls back to the scripted customer and labels it "backup".
 
 ## How it is built
 
@@ -131,5 +133,6 @@ Keys and emails live only in `.env` (git-ignored) and in the host's settings. A 
 
 - [docs/design.md](docs/design.md): product design and screens
 - [docs/production-plan.md](docs/production-plan.md): what is done and what waits for paid hosting
+- [docs/mvp-plan.md](docs/mvp-plan.md): the open demo and the roleplay-platform MVP (M0 to M5)
 - [GLOSSARY.md](GLOSSARY.md): terms
 - [AGENTS.md](AGENTS.md): rules for coding agents

@@ -81,3 +81,6 @@ def test_store_round_trip():
     store.save_scenario({"id": "custom-x", "title": "X"})
     store.save_scenario({"id": "custom-x", "title": "Y"})
     assert [s["title"] for s in store.custom_scenarios() if s["id"] == "custom-x"] == ["Y"]
+    # A half-filled scenario must not leak into other tests that share this database.
+    with db.engine().begin() as conn:
+        conn.execute(text("DELETE FROM scenarios WHERE id = 'custom-x'"))

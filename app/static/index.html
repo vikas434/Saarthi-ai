@@ -54,6 +54,8 @@
   .fallback { display:inline-block; font-size:11px; padding:1px 8px; border-radius:999px; background:#fff4e0; color:var(--mixed); margin-left:6px; }
   #who { font-size:12px; color:var(--muted); display:flex; gap:8px; align-items:center; }
   #gate { max-width:420px; margin:12vh auto; text-align:center; }
+  .welcome { display:flex; gap:12px; align-items:flex-start; justify-content:space-between; margin-bottom:16px; }
+  .welcome p { margin:0; } .welcome button { white-space:nowrap; }
   .muted { color:var(--muted); } .error { color:var(--bad); } .hidden { display:none !important; }
   .mic.on { background:var(--bad); color:#fff; border-color:var(--bad); }
 </style>
@@ -72,6 +74,10 @@
 <div id="gate" class="hidden"></div>
 <main class="hidden">
   <p id="error" class="error hidden" role="alert"></p>
+  <div id="welcome" class="card welcome hidden" role="note">
+    <p><strong>Welcome to Saarthi.</strong> This is a free demo. Your practice calls are saved and the admin can read them, so please don't use real customer names or details.</p>
+    <button class="ghost" id="welcome-ok">Got it</button>
+  </div>
 
   <section id="tab-practice">
     <div id="pick">
@@ -81,6 +87,7 @@
         <label for="agent">Your name</label>
         <input id="agent" type="text" placeholder="Agent name" style="max-width:240px">
       </div>
+      <p id="calls-left" class="muted"></p>
       <div id="scenarios" class="grid"></div>
     </div>
 
@@ -164,8 +171,8 @@
       </form>
     </div>
     <div class="card" style="margin-top:16px">
-      <h3>Access requests</h3>
-      <p class="muted">People who signed in but are not on the allow-list. To let someone in, add their email to <code>STUDENT_EMAILS</code> in the server settings.</p>
+      <h3 id="people-title">Access requests</h3>
+      <p class="muted" id="people-help">People who signed in but are not on the allow-list. To let someone in, add their email to <code>STUDENT_EMAILS</code> in the server settings.</p>
       <table id="access-requests"></table>
     </div>
   </section>
@@ -286,6 +293,7 @@ async function loadConfig() {
     ? "Offline demo mode: add a model key in .env for real coaching" : "Coach model: " + cfg.mode;
   $("product").value = cfg.product;
   if (cfg.role === "admin") loadAccessRequests().catch(fail);
+  showCallsLeft();
   const list = $("scenarios"); list.replaceChildren();
   for (const s of cfg.scenarios) {
     const start = el("button", { className: "primary", textContent: "Start call" });
@@ -401,6 +409,7 @@ async function startCall(scenarioId) {
   const data = await api("/api/sessions", { method: "POST",
     body: JSON.stringify({ scenario_id: scenarioId, agent_name: $("agent").value.trim() || "Agent" }) });
   session = data;
+  cfg = { ...cfg, calls_left: Math.max(0, cfg.calls_left - 1) }; showCallsLeft();
   $("pick").classList.add("hidden"); $("report").classList.add("hidden"); $("call").classList.remove("hidden");
   $("call-title").textContent = "Call with " + data.scenario.customer_name;
   $("call-brief").textContent = data.scenario.public_brief;
@@ -540,10 +549,30 @@ async function loadHistory() {
   if (!rows.length) t.append(el("tr", {}, el("td", { colSpan: 4, className: "muted", textContent: "No calls yet." })));
 }
 
+function showCallsLeft() {
+  const n = cfg.calls_left, total = cfg.calls_per_day;
+  $("calls-left").textContent = n > 0
+    ? `Practice calls left today: ${n} of ${total}.`
+    : `You've used all ${total} practice calls for today. Come back tomorrow for more.`;
+}
+const WELCOME_KEY = "saarthi.welcomed";
+function showWelcome() {
+  let seen = null; try { seen = localStorage.getItem(WELCOME_KEY); } catch {}
+  if (seen) return;
+  $("welcome").classList.remove("hidden");
+  $("welcome-ok").onclick = () => {
+    try { localStorage.setItem(WELCOME_KEY, "1"); } catch {}
+    $("welcome").classList.add("hidden");
+  };
+}
 async function loadAccessRequests() {
   const rows = await api("/api/access-requests");
   const table = $("access-requests");
-  table.replaceChildren(el("tr", {}, ...["Email", "First seen", "Last seen", "Attempts"].map((h) => el("th", { textContent: h }))));
+  if (cfg.open_signup) {
+    $("people-title").textContent = "People who joined";
+    $("people-help").textContent = "Sign-up is open: anyone who signs in practises as an agent. Only you can change Setup.";
+  }
+  table.replaceChildren(el("tr", {}, ...["Email", "First seen", "Last seen", cfg.open_signup ? "Visits" : "Attempts"].map((h) => el("th", { textContent: h }))));
   if (!rows.length) table.append(el("tr", {}, el("td", { className: "muted", colSpan: 4, textContent: "No requests yet." })));
   for (const r of rows) table.append(el("tr", {}, ...[r.email, r.first_seen, r.last_seen, String(r.count)].map((v) => el("td", { textContent: v }))));
 }
@@ -555,6 +584,7 @@ async function boot() {
   document.querySelector("nav").classList.remove("hidden");
   document.querySelector("main").classList.remove("hidden");
   await loadConfig();
+  showWelcome();
 }
 boot().catch((err) => { if (err.message !== ACCESS_PENDING) fail(err); });
 </script>
