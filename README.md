@@ -1,74 +1,135 @@
 # Saarthi
 
-Practise customer conversations with an AI customer. A coach comments on each reply. At the end the customer answers a survey, and you get a scorecard for every quality marker: SQS, tNPS, ProSat, checklists, and any marker you add.
+Practise customer calls with an AI customer. A coach comments on every reply, and when the call ends the customer answers a survey in character. The scorecard covers every quality marker the team cares about: SQS, tNPS, ProSat, call checklists, and any marker you add.
 
-Status: staging demo at https://saarthi-staging.onrender.com (sign-in required). See [docs/deploy.md](docs/deploy.md) and [docs/demo.md](docs/demo.md).
+**Status:** staging demo at **https://saarthi-staging.onrender.com** (sign-in required; free hosting sleeps after 15 idle minutes, so the first load can take a minute). Demo script: [docs/demo.md](docs/demo.md).
 
-![A practice call with live coach notes, real model](docs/screenshots/real-call.jpg)
+![A practice call with live coach notes](docs/screenshots/real-call.jpg)
 
-## Run it
+## What it does
 
-```
-./run.sh
-```
+1. **Pick a customer.** Each scenario has a short brief for the agent; the customer's real concerns stay hidden.
+2. **Talk.** Type, or press 🎤 Speak (Chrome speech recognition; needs HTTPS or localhost). The customer can speak back.
+3. **Get coached live.** After each reply the coach names one behaviour (good, mixed or improve), quotes you, and suggests a better line. Product claims are checked against the product facts.
+4. **End the call.** The coach scores every behaviour and checklist item while the customer answers the survey, in parallel.
+5. **Track progress.** History shows every call, the trend per marker and the average per behaviour.
 
-Open http://localhost:8100 in Chrome. Put your model key in `.env` (`ANTHROPIC_API_KEY=...`) for real coaching. Without a key it runs in offline demo mode: a scripted customer and rule-of-thumb scores, enough to show the flow.
+![Scorecard by marker](docs/screenshots/real-scorecard.jpg)
 
-With Docker: `docker compose up --build`.
+## Who can use it
 
-Storage is a local SQLite file by default. Set `DATABASE_URL` to use Postgres; the schema is migrated automatically on start, or by hand with `python -m app.db upgrade` (see [ADR 0002](docs/adr/0002-postgres-behind-database-url.md)).
+Sign-in is [Clerk](https://clerk.com), on Clerk's hosted sign-in page (Google or an emailed code). Access is an allow-list in server settings, never in code:
 
-## Sign-in
+| Role | Who | Can |
+|---|---|---|
+| Admin | `TEACHER_EMAIL` | Every call, Setup (product facts, markers, scenarios), access requests, cost per call |
+| Agent | `STUDENT_EMAILS` (comma-separated) | Own calls only |
+| Anyone else | | Sees only "Your request is received. We will review and approve." and is listed for the admin |
 
-Saarthi uses Clerk (see [ADR 0003](docs/adr/0003-clerk-sign-in-and-roles.md)). Only `TEACHER_EMAIL` (admin) and `STUDENT_EMAILS` (agents) get in; anyone else sees a request-received message and is listed for the admin in Setup. Agents see only their own calls; the admin sees every call and edits Setup.
-
-For local work without Clerk, set `AUTH_DEV_BYPASS=1` and type an allow-listed email on the sign-in screen. The bypass is refused on a hosted server.
-
-## Limits and cost
-
-Every model call's tokens and cost are stored in the `usage` table (prices in `config/pricing.json`). New calls stop with a clear message when today's spend reaches `DAILY_SPEND_CAP_USD` or a person reaches `MAX_CALLS_PER_USER_PER_DAY`; `RATE_LIMIT_PER_MINUTE` limits API requests per person. The admin sees each call's model cost on its scorecard.
-
-## How a session works
-
-1. Pick a customer scenario. You see a short brief. The customer's real concerns stay hidden.
-2. Talk to the customer by typing or with the Speak button (Chrome speech recognition).
-3. After each reply the coach notes one behaviour: good, mixed or improve, with a line to try instead.
-4. End the call. Two things happen together: the coach scores behaviours and checklists, and the customer answers the survey in character.
-5. History shows the trend on each marker and your average on each behaviour.
+To let someone in, add their email to `STUDENT_EMAILS` and restart. Details: [ADR 0003](docs/adr/0003-clerk-sign-in-and-roles.md).
 
 ## Markers
 
-A marker is anything you want agents coached on. There are three kinds, and every call is scored on all of them.
+A marker is anything you want agents coached on. Every call is scored on all of them.
 
 | Kind | Who scores it | Example |
 |---|---|---|
-| Rubric | The coach scores each behaviour 1 to 5, with a quote; weights give a percentage | SQS |
-| Survey | The customer answers in character after the call, with a reason; the scorecard shows the behaviours that drive it | tNPS (0 to 10), ProSat (1 to 5) |
+| Rubric | The coach scores each behaviour 1 to 5 with a quote; weights give a percentage | SQS |
+| Survey | The customer answers in character, with a reason; the scorecard shows the behaviours that drive it | tNPS (0 to 10), ProSat (1 to 5) |
 | Checklist | The coach marks each item yes, no or not applicable; a missed critical item is called out | Call checklist |
 
-Add your own in the Setup tab, or edit `config/markers.json`. Paste a checklist one item per line (start a line with `!` to mark it critical), list rubric behaviours as `Name - what good looks like`, or write a survey question with its scale.
+Add markers in Setup or in `config/markers.json`: a checklist is one item per line (`!` marks it critical), rubric behaviours are `Name - what good looks like`, a survey is a question and a scale.
 
-![Scorecard by marker, real model](docs/screenshots/real-scorecard.jpg)
+## Run it locally
 
-## Make it yours
+Needs Python 3.11+ and Chrome.
 
-- **Product facts:** Setup tab, or `config/product.md`. The coach marks down any claim these facts don't support.
-- **Customers:** Setup drafts a scenario from one sentence. Built-in ones are in `config/scenarios.json`.
-- **Model:** `LLM_PROVIDER=anthropic`, or `openai_compatible` with `LLM_BASE_URL` for a company gateway.
+```bash
+./run.sh
+```
 
-## Secrets and personal data
+The first run creates `.venv` and copies `.env.example` to `.env`. Then edit `.env`:
 
-Keys and emails live only in `.env` (git-ignored) and in Railway variables. A pre-commit hook in `.githooks/` runs [gitleaks](https://github.com/gitleaks/gitleaks) with `.gitleaks.toml`, which also blocks email addresses; CI scans the full history on every push. `run.sh` turns the hook on; to do it by hand: `git config core.hooksPath .githooks` (needs `brew install gitleaks`).
+- **Sign-in without Clerk:** `AUTH_DEV_BYPASS=1` and `TEACHER_EMAIL=` your email; type that email on the sign-in screen. The bypass is refused on any hosted server.
+- **Real coaching:** `ANTHROPIC_API_KEY=`. Without a key Saarthi runs offline: a scripted customer and rule-of-thumb scores, enough to show the flow.
+
+Open http://localhost:8100. Data goes to `data/saarthi.db` (SQLite) unless `DATABASE_URL` points at Postgres.
+
+With Docker instead: `docker compose up --build`.
+
+## Settings
+
+All configuration is environment variables; `.env.example` lists every one.
+
+| Variable | What it does |
+|---|---|
+| `ANTHROPIC_API_KEY`, `LLM_MODEL`, `LLM_EFFORT` | Model for customer, coach and survey (default `claude-haiku-5-5`, effort `low`; the scorecard always uses `medium`) |
+| `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_BASE_URL` | `openai_compatible` for a company gateway |
+| `DATABASE_URL` | Postgres URL; empty means SQLite at `SAARTHI_DB` |
+| `CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `CLERK_AUTHORIZED_PARTIES` | Clerk application keys and the site origin allowed to use them |
+| `TEACHER_EMAIL`, `STUDENT_EMAILS` | The allow-list |
+| `AUTH_DEV_BYPASS` | Local sign-in by typing an allow-listed email |
+| `DAILY_SPEND_CAP_USD`, `MAX_CALLS_PER_USER_PER_DAY`, `RATE_LIMIT_PER_MINUTE` | Cost guards (demo: $0.50, 20, 60) |
+| `FORCE_HTTPS`, `PORT` | Hosting: HTTPS redirect and HSTS behind a proxy; the port to listen on |
+| `CLERK_JS_VERSION`, `CLERK_UI_VERSION` | Majors of Clerk's browser script (6) and sign-in screens (1) |
+
+## Cost and limits
+
+Every model call's tokens and cost go into the `usage` table, priced from `config/pricing.json`. A practice call on Haiku 5.5 costs about $0.0034. When today's spend reaches `DAILY_SPEND_CAP_USD`, or a person reaches `MAX_CALLS_PER_USER_PER_DAY`, new calls stop with a clear message; calls in progress finish. The admin sees each call's cost on its scorecard. If a model reply can't be used, Saarthi retries once, then falls back to the scripted customer and labels it "backup".
+
+## How it is built
+
+One FastAPI app serves the API and a single static page ([ADR 0001](docs/adr/0001-one-app-one-call-per-turn.md)).
+
+```
+app/
+  main.py          routes; /api needs sign-in (except /api/auth/config)
+  auth.py          Clerk token check, allow-list, roles
+  coach.py         customer, live coach, scorecard, survey, scenario drafting
+  schemas.py       JSON schemas the model must answer in
+  llm.py           model providers (Anthropic, OpenAI-compatible)
+  offline.py       scripted customer and rule-of-thumb scoring
+  store.py, db.py  storage on SQLite or Postgres; Alembic migrations in migrations/
+  usage.py         tokens and cost per model call
+  limits.py        spend cap, calls per day, rate limit
+  web_security.py  security headers, HTTPS redirect
+  static/index.html  the whole front end
+config/            markers, scenarios, sample product facts, model prices
+evals/             strong and weak agent scripts for python -m app.evals
+tests/, e2e/       unit tests and the browser smoke test
+```
+
+Storage is Postgres in deployment and SQLite locally, behind `DATABASE_URL` ([ADR 0002](docs/adr/0002-postgres-behind-database-url.md)). The schema migrates on start; by hand: `python -m app.db upgrade`.
 
 ## Check it
 
-```
-.venv/bin/pytest -q             # no key needed
-.venv/bin/python -m app.evals   # a strong agent must beat a weak one on every marker;
-                                # with a key, any fallback reply or score fails it
-.venv/bin/pytest e2e -q         # browser smoke test (pip install -e ".[e2e]"; playwright install chromium)
+```bash
+.venv/bin/pytest -q
 ```
 
-CI (`.github/workflows/ci.yml`) runs all of these plus `ruff`, a Docker build and a secret scan on every push. Evals with the real model run only when started by hand (Actions → ci → Run workflow) and need the `ANTHROPIC_API_KEY` repo secret.
+```bash
+.venv/bin/python -m app.evals
+```
 
-See [docs/design.md](docs/design.md) for the full product design and [docs/plan.md](docs/plan.md) for the build order.
+```bash
+.venv/bin/pytest e2e -q
+```
+
+Unit tests need no key. The eval plays a strong and a weak agent through the real path; the strong one must win on every marker, and with a key any backup reply or score fails it. The browser test needs `pip install -e ".[e2e]"` and `playwright install chromium` once.
+
+CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs lint, format, unit tests and offline evals on SQLite and on Postgres, the browser test, a Docker build and a secret scan on every push. The real-model eval runs only when started by hand (Actions → ci → Run workflow).
+
+## Deploy
+
+Push to `main`; once CI passes, Render deploys automatically. Staging runs free: Render (app), Neon (Postgres), Clerk (sign-in). First deploy, rollback, key rotation and database restore: [docs/deploy.md](docs/deploy.md).
+
+## Secrets and personal data
+
+Keys and emails live only in `.env` (git-ignored) and in the host's settings. A pre-commit hook runs [gitleaks](https://github.com/gitleaks/gitleaks) with `.gitleaks.toml`, which also blocks email addresses, and CI scans the full history. `run.sh` turns the hook on (needs `brew install gitleaks`).
+
+## More
+
+- [docs/design.md](docs/design.md): product design and screens
+- [docs/production-plan.md](docs/production-plan.md): what is done and what waits for paid hosting
+- [GLOSSARY.md](GLOSSARY.md): terms
+- [AGENTS.md](AGENTS.md): rules for coding agents
