@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import re
 
-from app import coach, schemas, usage
+from app import coach, events, schemas, usage
 from app.llm import get_llm
 
 logger = logging.getLogger(__name__)
@@ -156,6 +156,7 @@ def lesson(scenario: dict) -> dict:
             data, source = _clean_lesson(got, base), llm.name
         except Exception as exc:  # noqa: BLE001
             logger.warning("tutor lesson failed, using the facts as written: %s", exc)
+            events.fallback("tutor.lesson", exc)
     return {**data, "answers": [None] * QUESTIONS, "source": source}
 
 
@@ -236,6 +237,7 @@ def grade(plan: dict, index: int, text: str) -> dict:
             }
         except Exception as exc:  # noqa: BLE001
             logger.warning("tutor grading failed, grading by key words: %s", exc)
+            events.fallback("tutor.grade", exc)
     return _offline_grade(question, text)
 
 

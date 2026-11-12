@@ -8,7 +8,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from contextvars import copy_context
 
-from app import delivery, offline, schemas, store, usage
+from app import delivery, events, offline, schemas, store, usage
 from app.config import CONFIG_DIR, MAX_AGENT_TURNS
 from app.llm import LLM, ModelReplyError, get_llm, parse_json
 
@@ -309,6 +309,7 @@ def next_turn(session: dict, agent_text: str) -> dict:
             }
         except Exception as exc:  # noqa: BLE001
             logger.warning("turn model call failed, using offline reply: %s", exc)
+            events.fallback("coach.turn", exc)
     fallback = llm is not None and result is None
     if result is None:
         result = offline.turn(scenario, agent_turns)
@@ -427,6 +428,7 @@ def _coach_data_inner(llm, session, scenario, behaviors, items, agent_turns) -> 
             return data, llm.name
         except Exception as exc:  # noqa: BLE001
             logger.warning("report model call failed, using offline scoring: %s", exc)
+            events.fallback("coach.report", exc)
     return offline.coach_report(behaviors, items, agent_turns), "offline"
 
 
@@ -450,6 +452,7 @@ def _survey_data_inner(llm, session, scenario, surveys, agent_turns) -> tuple[li
             return list(data.get("answers", [])), llm.name
         except Exception as exc:  # noqa: BLE001
             logger.warning("survey model call failed, using offline estimate: %s", exc)
+            events.fallback("coach.survey", exc)
     return offline.survey(surveys, agent_turns), "offline"
 
 

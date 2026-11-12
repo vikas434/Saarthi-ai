@@ -1,9 +1,11 @@
 """Human voice for the customer (ElevenLabs Flash v2.5), with a monthly cap and a browser fallback."""
 
+from datetime import UTC, datetime, timedelta
+
 import httpx
 import pytest
 
-from app import usage, voice
+from app import events, usage, voice
 
 SCENARIO = "price-worried-owner"
 MP3 = b"ID3fake-mp3-bytes"
@@ -85,6 +87,8 @@ def test_elevenlabs_refusal_falls_back_and_stops_asking(eleven, agent1):
     assert agent1.get(f"/api/sessions/{sid}/voice/1").status_code == 204
     assert agent1.get(f"/api/sessions/{sid}/voice/0").status_code == 204
     assert len(eleven.calls) == 1  # no more requests this month after a refusal
+    recent = events.since(datetime.now(UTC) - timedelta(minutes=5), "fallback")
+    assert any(r["name"] == "voice.elevenlabs" and r["detail"] == "refused 401" for r in recent)
 
 
 def test_without_a_key_the_browser_voice_is_used(agent1, monkeypatch):

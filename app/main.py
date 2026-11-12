@@ -16,6 +16,7 @@ from app.dashboard_routes import router as dashboard_router
 from app.deps import Admin, User
 from app.limits import LimitReached
 from app.roleplay_routes import router as roleplay_router
+from app.telemetry import TelemetryMiddleware
 from app.tutor_routes import router as tutor_router
 from app.web_security import SecurityMiddleware
 
@@ -36,6 +37,7 @@ app = FastAPI(
     openapi_url=None,
 )
 app.add_middleware(SecurityMiddleware)
+app.add_middleware(TelemetryMiddleware)
 app.include_router(roleplay_router)
 app.include_router(tutor_router)
 app.include_router(dashboard_router)

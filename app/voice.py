@@ -17,7 +17,7 @@ from datetime import UTC, datetime
 import httpx
 from sqlalchemy import text
 
-from app import coach, usage
+from app import coach, events, usage
 from app.config import env
 from app.db import engine
 
@@ -134,13 +134,16 @@ def speak(line: str, customer: dict) -> bytes | None:
         )
     except httpx.HTTPError as exc:
         logger.warning("human voice unavailable: %s", type(exc).__name__)
+        events.fallback("voice.elevenlabs", exc)
         return None
     if res.status_code in REFUSALS:
         logger.error("ElevenLabs refused (%s); browser voice until next month", res.status_code)
+        events.fallback("voice.elevenlabs", f"refused {res.status_code}")
         _refused_month = _month()
         return None
     if res.status_code != 200 or not res.content:
         logger.warning("ElevenLabs answered %s; using the browser voice", res.status_code)
+        events.fallback("voice.elevenlabs", f"status {res.status_code}")
         return None
     usage.record(MODEL, len(line), 0, kind="voice")
     with _lock:

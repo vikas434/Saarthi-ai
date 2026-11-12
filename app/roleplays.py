@@ -14,7 +14,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from app import coach, limits, schemas, store, usage
+from app import coach, events, limits, schemas, store, usage
 from app.auth import Principal
 from app.config import env
 from app.limits import LimitReached
@@ -217,6 +217,7 @@ def draft(description: str) -> dict:
         return RoleplayIn.model_validate(_clamp(merged)).model_dump()
     except Exception as exc:  # noqa: BLE001
         logger.warning("roleplay draft failed, using basic draft: %s", exc)
+        events.fallback("builder.draft", exc)
         return out
 
 
