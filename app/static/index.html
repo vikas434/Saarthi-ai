@@ -220,10 +220,15 @@ async function signIn() {
       { "data-clerk-publishable-key": conf.publishable_key });
     await window.Clerk.load({ ui: { ClerkUI: window.__internal_ClerkUICtor } });
     if (!window.Clerk.user) {
-      const box = el("div");
-      showGate(box);
-      window.Clerk.mountSignIn(box, { forceRedirectUrl: location.href });
-      window.Clerk.addListener(({ user }) => { if (user) location.reload(); });
+      // Sign-in happens on Clerk's hosted page, which also turns a first Google sign-in into a
+      // sign-up, then returns here. Embedding the sign-in box broke that hand-off.
+      const home = location.origin + "/";
+      const go = el("button", { className: "primary", id: "clerk-sign-in", textContent: "Sign in" });
+      go.addEventListener("click", () => window.Clerk.redirectToSignIn({
+        signInForceRedirectUrl: home, signUpForceRedirectUrl: home }));
+      showGate(el("h2", { textContent: "Saarthi" }),
+        el("p", { className: "muted", textContent: "Practise customer calls with an AI customer and coach." }), go);
+      if (location.hash) history.replaceState(null, "", home);  // drop leftovers of the old flow
       return false;
     }
     $("sign-out").onclick = () => window.Clerk.signOut().then(() => location.reload());
