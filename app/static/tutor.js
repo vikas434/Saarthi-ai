@@ -25,8 +25,6 @@ async function startTutor(scenario) {
 
 function renderLesson() {
   const { scenario, lesson } = tutorState;
-  const read = el("button", { className: "ghost", type: "button", textContent: "🔊 Read aloud" });
-  read.addEventListener("click", () => window.SaarthiVoice.say([lesson.intro, ...lesson.points.map((p) => `${p.title}. ${p.explain}`)].join(" ")));
   const ready = el("button", { className: "primary", type: "button", id: "tutor-ready", textContent: "I'm ready for the questions" });
   ready.addEventListener("click", () => { window.SaarthiVoice.stopSpeaking(); renderQuestion(); });
   const back = el("button", { className: "ghost", type: "button", textContent: "Back" });
@@ -37,7 +35,7 @@ function renderLesson() {
     el("div", { className: "card", style: "margin-bottom:16px" },
       ...lesson.points.map((p) => el("div", { className: "lesson-point" }, el("b", { textContent: p.title }), el("span", { textContent: p.explain })))),
     el("p", { className: "muted", textContent: `Then ${lesson.questions.length} quick questions, the kind ${scenario.customer_name} may ask.` }),
-    el("div", { className: "row" }, ready, read, back));
+    el("div", { className: "row" }, ready, back));
 }
 
 function renderQuestion() {

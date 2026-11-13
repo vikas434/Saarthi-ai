@@ -20,3 +20,7 @@ The browser's speech synthesis sounds robotic, which breaks the feeling of a rea
 - About 10 to 20 human-voiced calls a month on the free plan; after that, the browser voice. A paid ElevenLabs plan only needs a bigger `ELEVENLABS_MONTHLY_CHAR_CAP` (and a price in `config/pricing.json` so it counts toward the daily spend cap).
 - Free-plan audio is for non-commercial use; a paid plan is needed before Saarthi is sold.
 - New secret: `ELEVENLABS_API_KEY`, in `.env` and Render only.
+
+## Amendment (2026-11-13): no robotic voice
+The owner asked that the customer never speak with a robotic voice. The browser's speech synthesis is no longer used: the customer speaks through the video customer (Anam, ElevenLabs voices; [ADR 0010](0010-video-customer-anam.md)) or the ElevenLabs voice. If neither is available, the reply is shown as text with a short note. Tutor mode's "Read aloud" button, which used the browser voice, was removed.
+

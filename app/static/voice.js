@@ -83,22 +83,23 @@
     return { stop, cancel() { cancelled = true; stop(); } };
   }
 
-  // Human voice: play MP3 bytes from the server; resolves when done. Falls back to say(text)
-  // when the server sends no audio (204), on any error, or if playback is blocked.
+  // Human voice: play MP3 bytes from the server (ElevenLabs).
   let player = null;
-  async function sayHuman(fetchAudio, text) {
+  // Resolves true when the line was played, false when there was no human voice to play (no
+  // audio from the server, an error, or playback blocked). It never falls back to a robotic voice.
+  async function sayHuman(fetchAudio) {
     try {
       const res = await fetchAudio();
-      if (res.status !== 200) return say(text);
+      if (res.status !== 200) return false;
       const url = URL.createObjectURL(await res.blob());
       stopSpeaking();
       player = new Audio(url);
-      await new Promise((resolve) => {
-        const done = () => { URL.revokeObjectURL(url); resolve(); };
+      return await new Promise((resolve) => {
+        const done = () => { URL.revokeObjectURL(url); resolve(true); };
         player.onended = done; player.onerror = done; player.onpause = done;
-        player.play().catch(() => { URL.revokeObjectURL(url); say(text).then(resolve); });
+        player.play().catch(() => { URL.revokeObjectURL(url); resolve(false); });
       });
-    } catch { await say(text); }
+    } catch { return false; }
   }
   function stopAll() { window.speechSynthesis?.cancel(); if (player) { player.pause(); player = null; } }
 
