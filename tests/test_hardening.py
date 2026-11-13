@@ -17,7 +17,9 @@ def test_security_headers_on_every_response(anon):
         assert h["x-frame-options"] == "DENY"
         assert h["referrer-policy"] == "strict-origin-when-cross-origin"
         assert (
-            "camera=()" in h["permissions-policy"]
+            # The agent's own camera is opt-in, for this site only; never other origins.
+            "camera=(self)" in h["permissions-policy"]
+            and "geolocation=()" in h["permissions-policy"]
             and "microphone=(self)" in h["permissions-policy"]
         )
         csp = h["content-security-policy"]

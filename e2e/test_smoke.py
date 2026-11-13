@@ -382,3 +382,46 @@ def test_admin_insights_show_adoption_health_and_alerts(page: Page) -> None:
     expect(page.locator("#insights button", has_text="Last 30 days")).to_have_attribute(
         "aria-selected", "true"
     )
+
+
+# A stand-in face tracker: always sees one smiling face looking at the screen. The real one
+# (MediaPipe, from a CDN) is checked by hand; CI must not depend on the network for it.
+FAKE_FACE_TRACKER = """
+const smile = [{ categoryName: "mouthSmileLeft", score: 0.8 }, { categoryName: "mouthSmileRight", score: 0.8 }];
+const result = { faceLandmarks: [[{ x: 0.5, y: 0.5, z: 0 }]], faceBlendshapes: [{ categories: smile }],
+  facialTransformationMatrixes: [{ rows: 4, columns: 4, data: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1] }] };
+export const FilesetResolver = { forVisionTasks: async () => ({}) };
+export const FaceLandmarker = { createFromOptions: async () => ({ detectForVideo: () => result }) };
+"""
+
+
+def test_agent_camera_shows_self_view_and_on_camera_analytics(base_url: str) -> None:
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            args=["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"]
+        )
+        page = browser.new_page()
+        page.route(
+            "https://cdn.jsdelivr.net/npm/@mediapipe/**",
+            lambda route: route.fulfill(content_type="text/javascript", body=FAKE_FACE_TRACKER),
+        )
+        page.goto(base_url)
+        page.evaluate("localStorage.clear(); localStorage.setItem('saarthi.camera', '1')")
+        page.reload()
+        _sign_in(page, "agent@example.com")
+        expect(page.locator("#my-camera")).to_be_checked()
+        page.evaluate("document.getElementById('hands-free').checked = false")
+        page.locator("#scenarios button", has_text="Start call").first.click()
+        page.uncheck("#speak")
+        expect(page.locator("#self-view")).to_be_visible()
+        expect(page.locator("#self-badge")).to_have_text("You · eye contact")
+        page.wait_for_timeout(600)  # a few tracked frames
+        _say(page, "Hi Meera, how do you keep your books today?", 1)
+        page.click("#end")
+        expect(page.locator("#report .banner")).to_be_visible()
+        expect(page.locator("#self-view")).to_be_hidden()
+        page.click("#report-tab-analytics")
+        camera = page.locator("#report .card", has_text="On camera")
+        expect(camera).to_contain_text("Eye contact")
+        expect(camera).to_contain_text("100% of the time")
+        browser.close()

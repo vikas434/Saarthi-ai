@@ -51,10 +51,21 @@ class StartIn(BaseModel):
     agent_name: str = Field(default="", max_length=80)
 
 
+class CameraIn(BaseModel):
+    """What the agent's camera showed during one reply, worked out in the browser: numbers only."""
+
+    frames: int = Field(ge=0, le=100_000)
+    face_pct: float = Field(ge=0, le=100)
+    eye_contact_pct: float = Field(ge=0, le=100)
+    smile_pct: float = Field(ge=0, le=100)
+    tense_pct: float = Field(ge=0, le=100)
+
+
 class TurnIn(BaseModel):
     text: str = Field(min_length=1, max_length=2000)
     # How long the agent spoke, for spoken replies only.
     seconds: float | None = Field(default=None, ge=0, le=600)
+    camera: CameraIn | None = None
 
 
 class ProductIn(BaseModel):
@@ -102,7 +113,9 @@ def index() -> FileResponse:
 
 
 # Scripts next to the single page: voice for calls, and the scorecard view.
-PAGE_SCRIPTS = frozenset({"voice", "avatar", "report", "builder", "tutor", "dashboard", "insights"})
+PAGE_SCRIPTS = frozenset(
+    {"voice", "avatar", "camera", "report", "builder", "tutor", "dashboard", "insights"}
+)
 
 
 @app.get("/{name}.js")
@@ -236,6 +249,7 @@ def turn(sid: str, body: TurnIn, user: User) -> dict:
         result["coach"],
         result["done"],
         agent_seconds=body.seconds,
+        camera=body.camera.model_dump() if body.camera and body.camera.frames else None,
     )
     return result
 

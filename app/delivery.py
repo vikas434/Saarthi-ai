@@ -180,6 +180,81 @@ def _pace(agent_turns: list[dict]) -> dict | None:
     }
 
 
+EYE_CONTACT_GOOD = 60  # percent of the time facing the screen
+FACE_IN_FRAME_GOOD = 80
+SMILE_WATCH_BELOW = 5
+TENSE_WATCH_ABOVE = 25
+
+
+def _weighted(rows: list[dict], key: str) -> float:
+    frames = sum(r["frames"] for r in rows)
+    return round(sum(r[key] * r["frames"] for r in rows) / frames, 1) if frames else 0.0
+
+
+def _camera(agent_turns: list[dict]) -> list[dict]:
+    """On-camera metrics, from the per-reply numbers the browser worked out. No images."""
+    rows = [
+        {**t["camera"], "reply": n}
+        for n, t in enumerate(agent_turns, start=1)
+        if t.get("camera") and t["camera"].get("frames")
+    ]
+    if not rows:
+        return []
+    face, eye = _weighted(rows, "face_pct"), _weighted(rows, "eye_contact_pct")
+    smile, tense = _weighted(rows, "smile_pct"), _weighted(rows, "tense_pct")
+    weakest = min(rows, key=lambda r: r["eye_contact_pct"])
+    eye_detail = (
+        "You kept facing the customer."
+        if eye >= EYE_CONTACT_GOOD
+        else f"You often looked away; most of all around reply {weakest['reply']}. "
+        "Look at the customer, especially when you talk about price."
+    )
+    return [
+        {
+            "id": "eye_contact",
+            "group": "camera",
+            "name": "Eye contact",
+            "percent": eye,
+            "value": f"{eye:g}% of the time",
+            "detail": eye_detail,
+            "verdict": "good" if eye >= EYE_CONTACT_GOOD else "watch",
+        },
+        {
+            "id": "smile",
+            "group": "camera",
+            "name": "Smiling",
+            "percent": smile,
+            "value": f"{smile:g}% of the time",
+            "detail": "A warm, friendly face."
+            if smile >= SMILE_WATCH_BELOW
+            else "You rarely smiled. A smile when you greet and agree makes you sound warmer.",
+            "verdict": "good" if smile >= SMILE_WATCH_BELOW else "watch",
+        },
+        {
+            "id": "tense_face",
+            "group": "camera",
+            "name": "Tense expression",
+            "percent": tense,
+            "value": f"{tense:g}% of the time",
+            "detail": "You looked tense or frowned often. Relax your brow, especially under pressure."
+            if tense > TENSE_WATCH_ABOVE
+            else "You looked relaxed.",
+            "verdict": "watch" if tense > TENSE_WATCH_ABOVE else "good",
+        },
+        {
+            "id": "face_in_frame",
+            "group": "camera",
+            "name": "Face in frame",
+            "percent": face,
+            "value": f"{face:g}% of the time",
+            "detail": "You stayed in view."
+            if face >= FACE_IN_FRAME_GOOD
+            else "You were often out of view. Sit centred, facing the camera.",
+            "verdict": "good" if face >= FACE_IN_FRAME_GOOD else "watch",
+        },
+    ]
+
+
 def analyze(turns: list[dict]) -> dict:
     """Metrics for the agent's side of the call. turns are the stored turns of a session."""
     agent_turns = [t for t in turns if t.get("agent_text")]
@@ -207,4 +282,6 @@ def analyze(turns: list[dict]) -> dict:
     pace = _pace(agent_turns)
     if pace:
         metrics.append(pace)
-    return {"metrics": metrics, "spoken": pace is not None}
+    camera = _camera(agent_turns)
+    metrics.extend(camera)
+    return {"metrics": metrics, "spoken": pace is not None, "camera": bool(camera)}

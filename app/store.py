@@ -77,7 +77,12 @@ def get_session(sid: str) -> dict | None:
             **{k: v for k, v in dict(found).items() if k != "plan"},
             "report": json.loads(found["report"]) if found["report"] else None,
             "turns": [
-                {**dict(t), "coach": json.loads(t["coach"]) if t["coach"] else None} for t in turns
+                {
+                    **dict(t),
+                    "coach": json.loads(t["coach"]) if t["coach"] else None,
+                    "camera": json.loads(t["camera"]) if t["camera"] else None,
+                }
+                for t in turns
             ],
         }
 
@@ -89,6 +94,7 @@ def add_turn(
     coach: dict,
     done: bool,
     agent_seconds: float | None = None,
+    camera: dict | None = None,
 ) -> None:
     with _tx() as conn:
         idx = conn.execute(
@@ -98,8 +104,8 @@ def add_turn(
         conn.execute(
             text(
                 "INSERT INTO turns "
-                "(session_id, idx, agent_text, customer_text, coach, agent_seconds) "
-                "VALUES (:sid, :idx, :agent_text, :customer_text, :coach, :agent_seconds)"
+                "(session_id, idx, agent_text, customer_text, coach, agent_seconds, camera) "
+                "VALUES (:sid, :idx, :agent_text, :customer_text, :coach, :agent_seconds, :camera)"
             ),
             {
                 "sid": sid,
@@ -108,6 +114,7 @@ def add_turn(
                 "customer_text": customer_text,
                 "coach": json.dumps(coach),
                 "agent_seconds": agent_seconds,
+                "camera": json.dumps(camera) if camera else None,
             },
         )
         if done:

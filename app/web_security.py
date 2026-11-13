@@ -18,6 +18,9 @@ HSTS_SECONDS = 31_536_000
 HTTPS_EXEMPT_PATHS = ("/health", "/ready")  # the host's own health checks come over plain HTTP
 CLERK_STATIC_HOSTS = ("https://img.clerk.com", "https://clerk-telemetry.com")
 CLOUDFLARE_CHALLENGE = "https://challenges.cloudflare.com"
+# The agent's camera: MediaPipe face tracking (script and WebAssembly) and its model file.
+FACE_TRACKING_SCRIPTS = "https://cdn.jsdelivr.net"
+FACE_TRACKING_MODEL = "https://storage.googleapis.com"
 
 
 def _clerk_origin() -> str:
@@ -40,11 +43,13 @@ def content_security_policy() -> str:
     directives = {
         "default-src": "'self'",
         # The page's script is inline; moving it to a file would allow dropping 'unsafe-inline'.
-        "script-src": f"'self' 'unsafe-inline'{extra}{video_script} {CLOUDFLARE_CHALLENGE}",
+        "script-src": f"'self' 'unsafe-inline' 'wasm-unsafe-eval'{extra}{video_script} "
+        f"{FACE_TRACKING_SCRIPTS} {CLOUDFLARE_CHALLENGE}",
         "style-src": "'self' 'unsafe-inline'",
         "img-src": f"'self' data: {CLERK_STATIC_HOSTS[0]}",
         "font-src": "'self' data:",
-        "connect-src": f"'self'{extra} {CLERK_STATIC_HOSTS[1]}{video_connect}{video_script}",
+        "connect-src": f"'self'{extra} {CLERK_STATIC_HOSTS[1]}{video_connect}{video_script} "
+        f"{FACE_TRACKING_SCRIPTS} {FACE_TRACKING_MODEL}",
         "frame-src": CLOUDFLARE_CHALLENGE,
         "worker-src": "'self' blob:",
         # The human voice plays from a blob; the video customer arrives as a WebRTC stream.
@@ -72,7 +77,7 @@ class SecurityMiddleware(BaseHTTPMiddleware):
         headers["X-Content-Type-Options"] = "nosniff"
         headers["X-Frame-Options"] = "DENY"
         headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        headers["Permissions-Policy"] = "camera=(), geolocation=(), microphone=(self)"
+        headers["Permissions-Policy"] = "camera=(self), geolocation=(), microphone=(self)"
         headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
         if _force_https():
             headers["Strict-Transport-Security"] = f"max-age={HSTS_SECONDS}; includeSubDomains"

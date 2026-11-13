@@ -107,6 +107,12 @@
   .avatar-tile video { width:100%; height:100%; object-fit:cover; display:block; }
   .avatar-name { position:absolute; left:10px; bottom:8px; color:#fff; font-size:12px; background:rgba(0,0,0,.45); padding:2px 9px; border-radius:999px; }
   #call-main.with-video #chat { height:240px; }
+  .stage { position:relative; }
+  .self-view { position:relative; width:200px; border-radius:10px; overflow:hidden; background:#1f1d2e; margin-bottom:10px; aspect-ratio:4/3; }
+  .stage.with-video .self-view { position:absolute; right:10px; bottom:10px; width:24%; min-width:120px; margin:0; border:2px solid rgba(255,255,255,.7); z-index:2; }
+  .self-view video { width:100%; height:100%; object-fit:cover; transform:scaleX(-1); display:block; }
+  .self-view .avatar-name { font-size:11px; left:6px; bottom:6px; }
+  .self-view.away .avatar-name { background:rgba(168,100,0,.85); }
   .verdict.good { background:#e8f7ee; color:var(--good); } .verdict.watch { background:#fff4e0; color:var(--mixed); }
 </style>
 </head>
@@ -145,6 +151,7 @@
         <input id="agent" type="text" placeholder="Agent name" style="max-width:240px">
         <label id="hands-free-label"><input type="checkbox" id="hands-free"> Hands-free voice</label>
         <label id="video-label" class="hidden"><input type="checkbox" id="video-customer"> Video customer</label>
+        <label id="camera-label" class="hidden" title="Your video stays on this device; only numbers such as eye contact % are saved."><input type="checkbox" id="my-camera"> My camera</label>
       </div>
       <p id="voice-help" class="muted"></p>
       <p id="calls-left" class="muted"></p>
@@ -156,9 +163,15 @@
       <p id="call-brief" class="lede"></p>
       <div class="call">
         <div class="card" id="call-main">
-          <div id="avatar" class="avatar-tile hidden">
-            <video id="avatar-video" autoplay playsinline></video>
-            <span class="avatar-name" id="avatar-name"></span>
+          <div id="stage" class="stage">
+            <div id="avatar" class="avatar-tile hidden">
+              <video id="avatar-video" autoplay playsinline></video>
+              <span class="avatar-name" id="avatar-name"></span>
+            </div>
+            <div id="self-view" class="self-view hidden">
+              <video id="self-video" autoplay playsinline muted></video>
+              <span class="avatar-name" id="self-badge">You</span>
+            </div>
           </div>
           <div id="chat" aria-live="polite"></div>
           <form id="say" class="row">
@@ -244,6 +257,7 @@
 
 <script src="/voice.js"></script>
 <script src="/avatar.js"></script>
+<script src="/camera.js"></script>
 <script src="/report.js"></script>
 <script src="/builder.js"></script>
 <script src="/tutor.js"></script>
@@ -479,8 +493,36 @@ $("video-customer").addEventListener("change", () => {
 });
 function hideVideo() {
   window.SaarthiAvatar?.stop();
-  $("avatar").classList.add("hidden"); $("call-main").classList.remove("with-video");
+  $("avatar").classList.add("hidden"); $("call-main").classList.remove("with-video"); $("stage").classList.remove("with-video");
 }
+
+// The agent's own camera (/camera.js): self-view and on-camera numbers, nothing else leaves the device.
+const CAMERA_KEY = "saarthi.camera";
+function cameraWanted() {
+  if (!window.SaarthiCamera?.supported) return false;
+  try { return localStorage.getItem(CAMERA_KEY) === "1"; } catch { return false; }
+}
+(function initCamera() {
+  $("camera-label").classList.toggle("hidden", !window.SaarthiCamera?.supported);
+  $("my-camera").checked = cameraWanted();
+  $("my-camera").addEventListener("change", () => {
+    try { localStorage.setItem(CAMERA_KEY, $("my-camera").checked ? "1" : "0"); } catch {}
+  });
+})();
+function liveFace(seen) {
+  const away = !seen.face || !seen.eye;
+  $("self-view").classList.toggle("away", away);
+  $("self-badge").textContent = !seen.face ? "You · not in view" : seen.eye ? "You · eye contact" : "You · looking away";
+}
+async function startCamera() {
+  if (!cameraWanted()) return;
+  $("self-view").classList.remove("hidden"); $("self-badge").textContent = "You";
+  const state = await window.SaarthiCamera.start($("self-video"), liveFace);
+  if (state === "on") return;
+  $("self-view").classList.add("hidden");
+  voiceStatus(state === "blocked" ? "Camera blocked. Allow it in the browser to see your on-camera analytics." : "Camera not available. The call continues without it.");
+}
+function stopCamera() { window.SaarthiCamera?.stop(); $("self-view").classList.add("hidden"); }
 // Starts connecting at once; resolves true when the customer's video is playing.
 async function startVideo(data) {
   if (!videoWanted()) return false;
@@ -489,7 +531,7 @@ async function startVideo(data) {
     sessionId: data.id, sdk: cfg.avatar.sdk, headers: await authHeaders(),
     onClose: () => { if (session?.id === data.id && !scoring) { hideVideo(); voiceStatus("The video ended. The call continues with voice."); } },
   });
-  if (ok && session?.id === data.id) { $("avatar").classList.remove("hidden"); $("call-main").classList.add("with-video"); }
+  if (ok && session?.id === data.id) { $("avatar").classList.remove("hidden"); $("call-main").classList.add("with-video"); $("stage").classList.add("with-video"); }
   return ok;
 }
 function setMic(on) { $("mic").classList.toggle("on", on); $("mic").textContent = on ? "■ Done" : "🎤 Speak"; }
@@ -518,10 +560,14 @@ $("text").addEventListener("keydown", () => stopListening());
 let replyCount = 0;
 async function customerSpeaks(text, idx) {
   if (!$("speak").checked) return;
+  // Only real human voices: the video customer (Anam, ElevenLabs voices) or the ElevenLabs voice.
+  // Never the browser's robotic voice; without a human voice the reply is shown as text.
   if (window.SaarthiAvatar?.active && await window.SaarthiAvatar.say(text)) return;
-  if (cfg.voice !== "elevenlabs" || !session) { await V.say(text); return; }
-  const sid = session.id;
-  await V.sayHuman(async () => fetch(`/api/sessions/${sid}/voice/${idx}`, { headers: await authHeaders() }), text);
+  if (cfg.voice === "elevenlabs" && session) {
+    const sid = session.id;
+    if (await V.sayHuman(async () => fetch(`/api/sessions/${sid}/voice/${idx}`, { headers: await authHeaders() }))) return;
+  }
+  voiceStatus("The customer's voice isn't available right now. Read their reply on screen.");
 }
 function callOver() { return customerDone || timeUp; }
 function afterCustomer() {
@@ -585,7 +631,8 @@ async function startCall(scenarioId) {
   $("mic").disabled = !V.canListen; $("text").placeholder = "Type or speak your reply to the customer";
   startClock(data.scenario.minutes);
   const sid = data.id;
-  hideVideo();
+  hideVideo(); stopCamera();
+  startCamera();
   const video = startVideo(data);
   if (handsFreeOn() || videoWanted()) {
     setBusy(true); voiceStatus(`Calling ${data.scenario.customer_name}…`);
@@ -608,7 +655,8 @@ async function sendReply(text, seconds = null) {
   const sid = session.id;
   clearError(); setBusy(true); addMsg("agent", text, "You"); $("text").value = "";
   try {
-    const body = seconds == null ? { text } : { text, seconds };
+    const camera = window.SaarthiCamera?.on ? window.SaarthiCamera.take() : null;
+    const body = { text, ...(seconds == null ? {} : { seconds }), ...(camera ? { camera } : {}) };
     const r = await api(`/api/sessions/${sid}/turns`, { method: "POST", body: JSON.stringify(body) });
     if (session?.id !== sid || scoring) return;
     addMsg("customer", r.customer, session.scenario.customer_name, r.fallback); addNote(r.coach);
@@ -625,7 +673,7 @@ async function sendReply(text, seconds = null) {
 $("end").addEventListener("click", async () => {
   if (!session) return;
   if (scoring) return;
-  scoring = true; stopListening(); V.stopSpeaking(); stopClock(); voiceStatus(""); hideVideo();
+  scoring = true; stopListening(); V.stopSpeaking(); stopClock(); voiceStatus(""); hideVideo(); stopCamera();
   clearError(); setBusy(true); $("end").textContent = "Scoring…";
   const started = Date.now();
   const tick = () => { $("scoring-time").textContent = `${Math.round((Date.now() - started) / 1000)} seconds`; };

@@ -6,6 +6,7 @@ const ANALYTICS_GROUPS = [
   ["word_choice", "Word choice"],
   ["listening", "Listening"],
   ["delivery", "Delivery"],
+  ["camera", "On camera"],
 ];
 
 function markerValue(m) {
@@ -130,6 +131,7 @@ function analyticsTab(r) {
   }
   for (const [group, title] of ANALYTICS_GROUPS) {
     const rows = r.analytics.metrics.filter((m) => m.group === group);
+    if (group === "camera" && !rows.length) continue;  // only for calls with the camera on
     const card = el("div", { className: "card", style: "margin-bottom:16px" }, el("h3", { textContent: title }));
     rows.forEach((m) => card.append(metricRow(m)));
     if (group === "delivery" && !rows.length)
