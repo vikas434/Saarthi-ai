@@ -128,3 +128,15 @@ def scenario_schema() -> dict:
             },
         }
     )
+
+
+def assist_schema(stages: list[str]) -> dict:
+    """The live coach's next move for the agent."""
+    return _obj(
+        {
+            "stage": {"type": "string", "enum": list(stages)},
+            "move": _STR,
+            "avoid": _STR,
+            "line": _STR,
+        }
+    )

@@ -56,6 +56,8 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
         "SLACK_WEBHOOK_URL": "",
         "ANAM_API_KEY": "",
         "AUTH_DEV_BYPASS": "1",
+        # The whole suite signs in as two people within a minute or so.
+        "RATE_LIMIT_PER_MINUTE": "600",
         "TEACHER_EMAIL": "admin@example.com",
         "STUDENT_EMAILS": "agent@example.com",
     }
@@ -130,9 +132,16 @@ def test_offline_call_reaches_the_scorecard_and_tabs_open(page: Page) -> None:
     page.locator("#scenarios button", has_text="Start call").first.click()
     expect(page.locator("#call")).to_be_visible()
     page.uncheck("#speak")
+    expect(page.locator("#assist-stage")).to_have_text("Opening")  # coach assist: next move
+    expect(page.locator("#assist-line")).to_be_hidden()
+    page.click("#assist-show")
+    expect(page.locator("#assist-line")).to_be_visible()
     _say(page, "Hi Meera, thanks for calling. How do you keep your books today?", 1)
     _say(page, "So you spend Sundays in Excel. That sounds tiring. Shall I set up a trial?", 2)
     expect(page.locator("#coach .note")).to_have_count(2)
+    expect(page.locator("#assist-stage")).to_have_text("Discovery")
+    page.uncheck("#assist-on")
+    expect(page.locator("#assist")).to_be_hidden()
 
     page.click("#end")
     expect(page.locator("#report h2", has_text="Call complete")).to_be_visible()

@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
-from app import auth, avatar, coach, db, limits, roleplays, store, usage, voice
+from app import assist, auth, avatar, coach, db, limits, roleplays, store, usage, voice
 from app.auth import AuthError, Principal
 from app.dashboard_routes import router as dashboard_router
 from app.deps import Admin, User
@@ -112,9 +112,9 @@ def index() -> FileResponse:
     return FileResponse(STATIC / "index.html", headers={"Cache-Control": "no-cache"})
 
 
-# Scripts next to the single page: voice for calls, and the scorecard view.
+# Scripts next to the single page: voice, video, camera and coach assist for calls, and the rest.
 PAGE_SCRIPTS = frozenset(
-    {"voice", "avatar", "camera", "report", "builder", "tutor", "dashboard", "insights"}
+    {"voice", "avatar", "camera", "assist", "report", "builder", "tutor", "dashboard", "insights"}
 )
 
 
@@ -252,6 +252,18 @@ def turn(sid: str, body: TurnIn, user: User) -> dict:
         camera=body.camera.model_dump() if body.camera and body.camera.frames else None,
     )
     return result
+
+
+@app.post("/api/sessions/{sid}/assist")
+def live_assist(sid: str, user: User) -> dict:
+    """The agent's next move, shown in the coach panel while the customer speaks."""
+    session = _session_or_404(sid, user)
+    _roleplay_only(session)
+    scenario = coach.get_scenario(session["scenario_id"])
+    if scenario is None or session["report"] is not None or session["done"]:
+        raise HTTPException(status_code=409, detail="This call has ended.")
+    with usage.attribute(session_id=sid, user_id=user.user_id):
+        return assist.next_move(session, scenario)
 
 
 @app.post("/api/sessions/{sid}/end")

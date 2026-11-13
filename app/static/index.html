@@ -35,6 +35,11 @@
   .msg small { display:block; opacity:.7; font-size:11px; }
   .row { display:flex; gap:8px; align-items:center; margin-top:10px; flex-wrap:wrap; }
   .row input[type=text] { flex:1; min-width:180px; }
+  .assist { border:1px solid var(--brand); border-radius:12px; padding:10px 12px; margin-bottom:12px; background:#f6f3ff; }
+  .assist.loading { opacity:.6; } .assist p { margin:6px 0; }
+  .assist-head { display:flex; justify-content:space-between; align-items:center; color:var(--brand); }
+  .assist-head span { font-size:12px; border:1px solid var(--brand); border-radius:99px; padding:1px 8px; }
+  .assist q { display:block; background:#fff; border-radius:8px; padding:6px 10px; margin-top:6px; }
   #coach { height:480px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
   .note { border-left:4px solid var(--line); padding:6px 10px; background:#fafafd; border-radius:0 10px 10px 0; }
   .note.good { border-color:var(--good); } .note.mixed { border-color:var(--mixed); } .note.improve { border-color:var(--bad); }
@@ -183,12 +188,20 @@
           <div class="row">
             <label><input type="checkbox" id="speak" checked> Customer speaks aloud</label>
             <label><input type="checkbox" id="live" checked> Live coaching</label>
+            <label title="The coach suggests your next move while the customer speaks"><input type="checkbox" id="assist-on" checked> Coach assist</label>
             <span style="flex:1"></span>
             <button class="ghost" id="end">End call and score</button>
           </div>
         </div>
         <div class="card">
           <h3>Coach</h3>
+          <div id="assist" class="assist hidden" aria-live="polite">
+            <div class="assist-head"><b>▶ Next move</b><span id="assist-stage"></span></div>
+            <p id="assist-move"></p>
+            <p id="assist-avoid" class="muted hidden"></p>
+            <button type="button" class="ghost" id="assist-show">Show me a line</button>
+            <q id="assist-line" class="hidden"></q>
+          </div>
           <div id="coach"><p class="muted" id="coach-empty">Notes on each of your replies appear here.</p></div>
         </div>
       </div>
@@ -258,6 +271,7 @@
 <script src="/voice.js"></script>
 <script src="/avatar.js"></script>
 <script src="/camera.js"></script>
+<script src="/assist.js"></script>
 <script src="/report.js"></script>
 <script src="/builder.js"></script>
 <script src="/tutor.js"></script>
@@ -569,6 +583,12 @@ async function customerSpeaks(text, idx) {
   }
   voiceStatus("The customer's voice isn't available right now. Read their reply on screen.");
 }
+function nextMove() {
+  if (!session || !$("assist-on").checked || customerDone || timeUp) { window.SaarthiAssist?.hide(); return; }
+  const sid = session.id;
+  window.SaarthiAssist?.show(() => api(`/api/sessions/${sid}/assist`, { method: "POST" }));
+}
+$("assist-on").addEventListener("change", nextMove);
 function callOver() { return customerDone || timeUp; }
 function afterCustomer() {
   if (scoring || !session) return;
@@ -631,7 +651,7 @@ async function startCall(scenarioId) {
   $("mic").disabled = !V.canListen; $("text").placeholder = "Type or speak your reply to the customer";
   startClock(data.scenario.minutes);
   const sid = data.id;
-  hideVideo(); stopCamera();
+  hideVideo(); stopCamera(); window.SaarthiAssist?.hide();
   startCamera();
   const video = startVideo(data);
   if (handsFreeOn() || videoWanted()) {
@@ -640,7 +660,7 @@ async function startCall(scenarioId) {
     if (session?.id !== sid) return;
     setBusy(false); voiceStatus("");
   }
-  addMsg("customer", data.customer, data.scenario.customer_name);
+  addMsg("customer", data.customer, data.scenario.customer_name); nextMove();
   replyCount = 0;
   await customerSpeaks(data.customer, 0);
   if (session?.id === sid) afterCustomer();
@@ -653,7 +673,7 @@ $("say").addEventListener("submit", (e) => {
 async function sendReply(text, seconds = null) {
   if (!text || busy || !session) return;
   const sid = session.id;
-  clearError(); setBusy(true); addMsg("agent", text, "You"); $("text").value = "";
+  clearError(); setBusy(true); addMsg("agent", text, "You"); $("text").value = ""; window.SaarthiAssist?.hide();
   try {
     const camera = window.SaarthiCamera?.on ? window.SaarthiCamera.take() : null;
     const body = { text, ...(seconds == null ? {} : { seconds }), ...(camera ? { camera } : {}) };
@@ -665,6 +685,7 @@ async function sendReply(text, seconds = null) {
       customerDone = true; $("send").disabled = true; $("text").disabled = true; $("mic").disabled = true;
       $("text").placeholder = "The customer has ended the call. Click End call and score.";
     }
+    nextMove();
     replyCount += 1;
     await customerSpeaks(r.customer, replyCount);
     if (session?.id === sid) afterCustomer();
@@ -673,7 +694,7 @@ async function sendReply(text, seconds = null) {
 $("end").addEventListener("click", async () => {
   if (!session) return;
   if (scoring) return;
-  scoring = true; stopListening(); V.stopSpeaking(); stopClock(); voiceStatus(""); hideVideo(); stopCamera();
+  scoring = true; stopListening(); V.stopSpeaking(); stopClock(); voiceStatus(""); hideVideo(); stopCamera(); window.SaarthiAssist?.hide();
   clearError(); setBusy(true); $("end").textContent = "Scoring…";
   const started = Date.now();
   const tick = () => { $("scoring-time").textContent = `${Math.round((Date.now() - started) / 1000)} seconds`; };
