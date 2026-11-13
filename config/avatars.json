@@ -1,7 +1,11 @@
 {
-  "about": "Anam stock avatars and voices for the AI customer's face on a call. A customer's voice (female or male) picks the pool; the name picks the pair, so a customer always looks and sounds the same. An empty pool uses the other one. Find more ids with: python -m app.avatar list",
+  "about": "Anam stock avatars (realistic) and Anam voices from ElevenLabs with Indian English accents, for the AI customer's face on a call. A customer's voice (female or male) picks the pool; the name picks the pair, so a customer always looks and sounds the same. An empty pool uses the other one. Find more ids with: python -m app.avatar list",
   "female": [
-    {"name": "Liv", "avatar_id": "071b0286-4cce-4808-bee2-e642f1062de3", "voice_id": "de23e340-1416-4dd8-977d-065a7ca11697"}
+    {"name": "Mia", "avatar_id": "edf6fdcb-acab-44b8-b974-ded72665ee26", "voice_id": "982f992f-e918-585a-8da2-b83da10fcbf5", "voice": "Anjali - Warm, Cheerful and Clear (ElevenLabs, IN)"},
+    {"name": "Samira", "avatar_id": "0caf57ab-3da9-4d27-b356-53837508aaf6", "voice_id": "69a1a7d8-5297-4bb6-a1cd-8073b5aee35b", "voice": "Aaira - Conversational and Casual (ElevenLabs, IN)"}
   ],
-  "male": []
+  "male": [
+    {"name": "Gabriel", "avatar_id": "6cc28442-cccd-42a8-b6e4-24b7210a09c5", "voice_id": "8f0432a9-abdb-4994-8c23-a4ebac39fb2f", "voice": "Aakash Aryan - Conversational and Steady (ElevenLabs, IN)"},
+    {"name": "Noel", "avatar_id": "130534b2-3267-4d2c-91f2-6126fd441c36", "voice_id": "372effd0-24d4-4882-9753-d79f8814d15d", "voice": "Aryaveer - Confident, Friendly and Clear (ElevenLabs, IN)"}
+  ]
 }
