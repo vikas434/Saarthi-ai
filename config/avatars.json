@@ -1,0 +1,7 @@
+{
+  "about": "Anam stock avatars and voices for the AI customer's face on a call. A customer's voice (female or male) picks the pool; the name picks the pair, so a customer always looks and sounds the same. An empty pool uses the other one. Find more ids with: python -m app.avatar list",
+  "female": [
+    {"name": "Liv", "avatar_id": "071b0286-4cce-4808-bee2-e642f1062de3", "voice_id": "de23e340-1416-4dd8-977d-065a7ca11697"}
+  ],
+  "male": []
+}

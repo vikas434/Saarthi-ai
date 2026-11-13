@@ -20,6 +20,7 @@ TOP_SCENARIOS = 5
 TURN_ROUTE = "POST /api/sessions/{sid}/turns"
 REPORT_ROUTE = "POST /api/sessions/{sid}/end"
 VOICE_ROUTE = "GET /api/sessions/{sid}/voice/{idx}"
+AVATAR_ROUTE = "POST /api/sessions/{sid}/avatar"
 DRAFT_ROUTE = "POST /api/roleplays/draft"
 SAVE_ROLEPLAY_ROUTE = "POST /api/roleplays"
 MODEL_KINDS = ("turn", "report", "survey", "tutor", "draft")
@@ -150,6 +151,7 @@ def _features(sessions: list[dict], requests: list[dict], start: datetime) -> li
         ("AI roleplay drafts", *by_route(DRAFT_ROUTE)),
         ("Roleplays saved", *by_route(SAVE_ROLEPLAY_ROUTE)),
         ("Human voice lines", *by_route(VOICE_ROUTE)),
+        ("Video customer calls", *by_route(AVATAR_ROUTE)),
         ("Spoken replies", _spoken_replies(start), None),
     ]
     return [{"feature": name, "uses": uses, "users": users} for name, uses, users in rows]

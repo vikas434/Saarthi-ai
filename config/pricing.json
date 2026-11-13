@@ -1,5 +1,5 @@
 {
-  "about": "US dollars per million tokens. Cache prices follow Anthropic's usual multipliers (read 0.1x, write 1.25x input). Unknown models use 'default', priced high on purpose so a cap is never undercounted. eleven_flash_v2_5 counts characters as input and is priced 0 for the ElevenLabs free plan (paid is about 50 per million characters); its own monthly character cap applies instead.",
+  "about": "US dollars per million tokens. Cache prices follow Anthropic's usual multipliers (read 0.1x, write 1.25x input). Unknown models use 'default', priced high on purpose so a cap is never undercounted. eleven_flash_v2_5 counts characters as input and is priced 0 for the ElevenLabs free plan (paid is about 50 per million characters); its own monthly character cap applies instead. anam counts planned avatar seconds as input and is priced 0: Anam bills per minute on its own plan, capped by ANAM_MONTHLY_MINUTE_CAP.",
   "models": {
     "claude-haiku-5-5": {
       "input": 0.1,
@@ -20,6 +20,12 @@
       "cache_write": 5.0
     },
     "eleven_flash_v2_5": {
+      "input": 0.0,
+      "output": 0.0,
+      "cache_read": 0.0,
+      "cache_write": 0.0
+    },
+    "anam": {
       "input": 0.0,
       "output": 0.0,
       "cache_read": 0.0,

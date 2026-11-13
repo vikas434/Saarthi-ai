@@ -10,7 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
-from app import auth, coach, db, limits, roleplays, store, usage, voice
+from app import auth, avatar, coach, db, limits, roleplays, store, usage, voice
 from app.auth import AuthError, Principal
 from app.dashboard_routes import router as dashboard_router
 from app.deps import Admin, User
@@ -102,7 +102,7 @@ def index() -> FileResponse:
 
 
 # Scripts next to the single page: voice for calls, and the scorecard view.
-PAGE_SCRIPTS = frozenset({"voice", "report", "builder", "tutor", "dashboard", "insights"})
+PAGE_SCRIPTS = frozenset({"voice", "avatar", "report", "builder", "tutor", "dashboard", "insights"})
 
 
 @app.get("/{name}.js")
@@ -134,6 +134,7 @@ def config(user: User) -> dict:
         "role": user.role,
         "open_signup": auth.open_signup(),
         "voice": "elevenlabs" if voice.available() else "browser",
+        "avatar": {"sdk": avatar.SDK_VERSION} if avatar.available() else None,
         "calls_per_day": limits.calls_per_day(),
         "calls_left": limits.calls_left(user.user_id),
         "rubric": coach.load_rubric(),
@@ -283,6 +284,22 @@ def customer_voice(sid: str, idx: int, user: User) -> Response:
     return Response(
         audio, media_type="audio/mpeg", headers={"Cache-Control": "private, max-age=3600"}
     )
+
+
+@app.post("/api/sessions/{sid}/avatar")
+def customer_avatar(sid: str, user: User) -> Response:
+    """A short-lived Anam token for this call's video customer; 204 means run without video."""
+    session = _session_or_404(sid, user)
+    _roleplay_only(session)
+    scenario = coach.get_scenario(session["scenario_id"])
+    if scenario is None or session["report"] is not None:
+        raise HTTPException(status_code=409, detail="This call has ended.")
+    minutes = coach.public_scenario(scenario)["minutes"]
+    with usage.attribute(session_id=sid, user_id=user.user_id):
+        token = avatar.session_token(scenario["customer"], minutes)
+    if token is None:
+        return Response(status_code=204)
+    return JSONResponse({"session_token": token}, headers={"Cache-Control": "no-store"})
 
 
 @app.get("/api/sessions/{sid}")

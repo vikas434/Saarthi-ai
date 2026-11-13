@@ -11,7 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import RedirectResponse, Response
 
-from app import auth
+from app import auth, avatar
 from app.config import env
 
 HSTS_SECONDS = 31_536_000
@@ -33,17 +33,22 @@ def _clerk_origin() -> str:
 def content_security_policy() -> str:
     clerk = _clerk_origin()
     extra = f" {clerk}" if clerk else ""
+    # The video customer (Anam): its SDK from esm.sh, its API and WebRTC signalling.
+    video = avatar.configured()
+    video_script = f" {avatar.SCRIPT_SOURCE}" if video else ""
+    video_connect = (" " + " ".join(avatar.CONNECT_SOURCES)) if video else ""
     directives = {
         "default-src": "'self'",
         # The page's script is inline; moving it to a file would allow dropping 'unsafe-inline'.
-        "script-src": f"'self' 'unsafe-inline'{extra} {CLOUDFLARE_CHALLENGE}",
+        "script-src": f"'self' 'unsafe-inline'{extra}{video_script} {CLOUDFLARE_CHALLENGE}",
         "style-src": "'self' 'unsafe-inline'",
         "img-src": f"'self' data: {CLERK_STATIC_HOSTS[0]}",
         "font-src": "'self' data:",
-        "connect-src": f"'self'{extra} {CLERK_STATIC_HOSTS[1]}",
+        "connect-src": f"'self'{extra} {CLERK_STATIC_HOSTS[1]}{video_connect}{video_script}",
         "frame-src": CLOUDFLARE_CHALLENGE,
         "worker-src": "'self' blob:",
-        "media-src": "'self' blob:",  # the customer's human voice plays from a blob
+        # The human voice plays from a blob; the video customer arrives as a WebRTC stream.
+        "media-src": "'self' blob: mediastream:",
         "form-action": "'self'",
         "base-uri": "'self'",
         "object-src": "'none'",

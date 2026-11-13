@@ -103,6 +103,10 @@
   .hbars { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
   .hbar-label { display:flex; justify-content:space-between; gap:8px; font-size:14px; }
   .hbar .bar { margin:4px 0 0; } .hbar .bar > i { border-radius:0 4px 4px 0; }
+  .avatar-tile { position:relative; border-radius:12px; overflow:hidden; background:#1f1d2e; margin-bottom:10px; aspect-ratio:16/9; max-height:320px; }
+  .avatar-tile video { width:100%; height:100%; object-fit:cover; display:block; }
+  .avatar-name { position:absolute; left:10px; bottom:8px; color:#fff; font-size:12px; background:rgba(0,0,0,.45); padding:2px 9px; border-radius:999px; }
+  #call-main.with-video #chat { height:240px; }
   .verdict.good { background:#e8f7ee; color:var(--good); } .verdict.watch { background:#fff4e0; color:var(--mixed); }
 </style>
 </head>
@@ -140,6 +144,7 @@
         <label for="agent">Your name</label>
         <input id="agent" type="text" placeholder="Agent name" style="max-width:240px">
         <label id="hands-free-label"><input type="checkbox" id="hands-free"> Hands-free voice</label>
+        <label id="video-label" class="hidden"><input type="checkbox" id="video-customer"> Video customer</label>
       </div>
       <p id="voice-help" class="muted"></p>
       <p id="calls-left" class="muted"></p>
@@ -150,7 +155,11 @@
       <div class="call-head"><h2 id="call-title"></h2><span id="clock" class="muted"></span></div>
       <p id="call-brief" class="lede"></p>
       <div class="call">
-        <div class="card">
+        <div class="card" id="call-main">
+          <div id="avatar" class="avatar-tile hidden">
+            <video id="avatar-video" autoplay playsinline></video>
+            <span class="avatar-name" id="avatar-name"></span>
+          </div>
           <div id="chat" aria-live="polite"></div>
           <form id="say" class="row">
             <button type="button" id="mic" class="ghost mic" title="Speak your reply">🎤 Speak</button>
@@ -234,6 +243,7 @@
 </main>
 
 <script src="/voice.js"></script>
+<script src="/avatar.js"></script>
 <script src="/report.js"></script>
 <script src="/builder.js"></script>
 <script src="/tutor.js"></script>
@@ -371,7 +381,7 @@ async function loadConfig() {
     ? "Offline demo mode: add a model key in .env for real coaching" : "Coach model: " + cfg.mode;
   $("product").value = cfg.product;
   if (cfg.role === "admin") loadAccessRequests().catch(fail);
-  showCallsLeft();
+  showCallsLeft(); showVideoOption();
   const list = $("scenarios"); list.replaceChildren();
   for (const s of cfg.scenarios) {
     const start = el("button", { className: "primary", textContent: "Start call" });
@@ -452,6 +462,36 @@ function handsFreeOn() { return V.canListen && $("hands-free").checked; }
   });
 })();
 function voiceStatus(text) { $("voice-status").textContent = text; }
+
+// Video customer (Anam, /avatar.js): offered when the server has it; the agent can turn it off.
+const VIDEO_KEY = "saarthi.video";
+function videoOffered() { return Boolean(cfg?.avatar && window.SaarthiAvatar); }
+function videoWanted() {
+  if (!videoOffered()) return false;
+  try { return localStorage.getItem(VIDEO_KEY) !== "0"; } catch { return true; }
+}
+function showVideoOption() {
+  $("video-label").classList.toggle("hidden", !videoOffered());
+  $("video-customer").checked = videoWanted();
+}
+$("video-customer").addEventListener("change", () => {
+  try { localStorage.setItem(VIDEO_KEY, $("video-customer").checked ? "1" : "0"); } catch {}
+});
+function hideVideo() {
+  window.SaarthiAvatar?.stop();
+  $("avatar").classList.add("hidden"); $("call-main").classList.remove("with-video");
+}
+// Starts connecting at once; resolves true when the customer's video is playing.
+async function startVideo(data) {
+  if (!videoWanted()) return false;
+  $("avatar-name").textContent = data.scenario.customer_name;
+  const ok = await window.SaarthiAvatar.start({
+    sessionId: data.id, sdk: cfg.avatar.sdk, headers: await authHeaders(),
+    onClose: () => { if (session?.id === data.id && !scoring) { hideVideo(); voiceStatus("The video ended. The call continues with voice."); } },
+  });
+  if (ok && session?.id === data.id) { $("avatar").classList.remove("hidden"); $("call-main").classList.add("with-video"); }
+  return ok;
+}
 function setMic(on) { $("mic").classList.toggle("on", on); $("mic").textContent = on ? "■ Done" : "🎤 Speak"; }
 function stopListening() {
   if (!listener) return;
@@ -478,6 +518,7 @@ $("text").addEventListener("keydown", () => stopListening());
 let replyCount = 0;
 async function customerSpeaks(text, idx) {
   if (!$("speak").checked) return;
+  if (window.SaarthiAvatar?.active && await window.SaarthiAvatar.say(text)) return;
   if (cfg.voice !== "elevenlabs" || !session) { await V.say(text); return; }
   const sid = session.id;
   await V.sayHuman(async () => fetch(`/api/sessions/${sid}/voice/${idx}`, { headers: await authHeaders() }), text);
@@ -544,9 +585,11 @@ async function startCall(scenarioId) {
   $("mic").disabled = !V.canListen; $("text").placeholder = "Type or speak your reply to the customer";
   startClock(data.scenario.minutes);
   const sid = data.id;
-  if (handsFreeOn()) {
+  hideVideo();
+  const video = startVideo(data);
+  if (handsFreeOn() || videoWanted()) {
     setBusy(true); voiceStatus(`Calling ${data.scenario.customer_name}…`);
-    await V.ring();
+    await Promise.all([handsFreeOn() ? V.ring() : null, video]);
     if (session?.id !== sid) return;
     setBusy(false); voiceStatus("");
   }
@@ -582,7 +625,7 @@ async function sendReply(text, seconds = null) {
 $("end").addEventListener("click", async () => {
   if (!session) return;
   if (scoring) return;
-  scoring = true; stopListening(); V.stopSpeaking(); stopClock(); voiceStatus("");
+  scoring = true; stopListening(); V.stopSpeaking(); stopClock(); voiceStatus(""); hideVideo();
   clearError(); setBusy(true); $("end").textContent = "Scoring…";
   const started = Date.now();
   const tick = () => { $("scoring-time").textContent = `${Math.round((Date.now() - started) / 1000)} seconds`; };

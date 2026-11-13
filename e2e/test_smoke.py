@@ -54,6 +54,7 @@ def base_url(tmp_path_factory: pytest.TempPathFactory) -> Iterator[str]:
         "CLERK_PUBLISHABLE_KEY": "",
         "ELEVENLABS_API_KEY": "",
         "SLACK_WEBHOOK_URL": "",
+        "ANAM_API_KEY": "",
         "AUTH_DEV_BYPASS": "1",
         "TEACHER_EMAIL": "admin@example.com",
         "STUDENT_EMAILS": "agent@example.com",
