@@ -92,4 +92,4 @@ def test_no_move_after_the_call_ends(agent1):
     sid = _start(agent1)
     agent1.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Maria, how are the books?"})
     agent1.post(f"/api/sessions/{sid}/end")
-    assert agent1.post(f"/api/sessions/{sid}/assist").status_code == 409
+    assert agent1.post(f"/api/sessions/{sid}/assist").status_code == 204

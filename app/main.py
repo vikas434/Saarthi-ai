@@ -255,14 +255,16 @@ def turn(sid: str, body: TurnIn, user: User) -> dict:
     return result
 
 
-@app.post("/api/sessions/{sid}/assist")
-def live_assist(sid: str, user: User) -> dict:
-    """The agent's next move, shown in the coach panel while the customer speaks."""
+@app.post("/api/sessions/{sid}/assist", response_model=None)
+def live_assist(sid: str, user: User) -> Response | dict:
+    """The agent's next move, shown in the coach panel while the customer speaks.
+
+    204 means no move: the call ended while the page was asking (not an error for the page)."""
     session = _session_or_404(sid, user)
     _roleplay_only(session)
     scenario = coach.get_scenario(session["scenario_id"])
     if scenario is None or session["report"] is not None or session["done"]:
-        raise HTTPException(status_code=409, detail="This call has ended.")
+        return Response(status_code=204)
     with usage.attribute(session_id=sid, user_id=user.user_id):
         return assist.next_move(session, scenario)
 
