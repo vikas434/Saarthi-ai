@@ -147,7 +147,8 @@ def config(user: User) -> dict:
         "role": user.role,
         "open_signup": auth.open_signup(),
         "voice": "elevenlabs" if voice.available() else "browser",
-        "avatar": {"sdk": avatar.SDK_VERSION} if avatar.available() else None,
+        "avatar": avatar.status(),
+        "video_minutes": avatar.minutes(),
         "calls_per_day": limits.calls_per_day(),
         "calls_left": limits.calls_left(user.user_id),
         "rubric": coach.load_rubric(),
@@ -276,6 +277,7 @@ def end(sid: str, user: User) -> dict:
         with usage.attribute(session_id=sid, user_id=user.user_id):
             report = coach.build_report(session)
         store.save_report(sid, report)
+        avatar.forget()  # the video minutes just used show up straight away
         session = _session_or_404(sid, user)
     return _for_viewer(session, user)
 

@@ -159,7 +159,7 @@
         <label id="camera-label" class="hidden" title="Your video stays on this device; only numbers such as eye contact % are saved."><input type="checkbox" id="my-camera"> My camera</label>
       </div>
       <p id="voice-help" class="muted"></p>
-      <p id="calls-left" class="muted"></p>
+      <p id="calls-left" class="muted" style="font-weight:600"></p>
       <div id="scenarios" class="grid"></div>
     </div>
 
@@ -703,6 +703,7 @@ $("end").addEventListener("click", async () => {
   try { showReport(await api(`/api/sessions/${session.id}/end`, { method: "POST" })); }
   catch (err) { scoring = false; fail(err); window.scrollTo(0, 0); }
   finally {
+    refreshVideoMinutes();
     clearInterval(ticker); $("scoring").classList.add("hidden");
     setBusy(false); $("mic").disabled = !V.canListen; $("end").textContent = "End call and score";
   }
@@ -742,11 +743,22 @@ async function loadHistory() {
   if (!rows.length) t.append(el("tr", {}, el("td", { colSpan: 4, className: "muted", textContent: "No calls yet." })));
 }
 
+const NO_REAL_CALL_LIMIT = 100;  // a daily limit this high is not worth showing
 function showCallsLeft() {
-  const n = cfg.calls_left, total = cfg.calls_per_day;
-  $("calls-left").textContent = n > 0
+  const n = cfg.calls_left, total = cfg.calls_per_day, video = cfg.video_minutes;
+  const parts = [];
+  if (total < NO_REAL_CALL_LIMIT) parts.push(n > 0
     ? `Practice calls left today: ${n} of ${total}.`
-    : `You've used all ${total} practice calls for today. Come back tomorrow for more.`;
+    : `You've used all ${total} practice calls for today. Come back tomorrow for more.`);
+  if (video) parts.push(video.minutes_left > 0
+    ? `Free video minutes left this month: ${video.minutes_left} of ${video.minutes_total}.`
+    : "Free video minutes are used up for this month. Calls continue with the customer's voice.");
+  $("calls-left").textContent = parts.join(" ");
+  $("calls-left").classList.toggle("hidden", !parts.length);
+}
+async function refreshVideoMinutes() {
+  try { const fresh = await api("/api/config"); cfg = { ...cfg, avatar: fresh.avatar, video_minutes: fresh.video_minutes }; showCallsLeft(); showVideoOption(); }
+  catch { /* the counter is a convenience; a failed refresh changes nothing */ }
 }
 const WELCOME_KEY = "saarthi.welcomed";
 function showWelcome() {
