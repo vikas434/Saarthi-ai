@@ -1,4 +1,4 @@
-"""Admin Insights: who uses Saarthi, what they use, whether it works, and the alerts."""
+"""Admin Insights: who uses TalkWise, what they use, whether it works, and the alerts."""
 
 from datetime import UTC, datetime, timedelta
 

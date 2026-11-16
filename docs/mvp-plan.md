@@ -1,6 +1,6 @@
-# Saarthi MVP: open demo and a roleplay-platform experience
+# TalkWise MVP: open demo and a roleplay-platform experience
 
-Goal: let anyone try Saarthi, and make it feel like a full AI roleplay platform (reference: Yoodli, studied 2026-11-12), without recordings or video. We take the experience and feature shape, not their name, look or content.
+Goal: let anyone try TalkWise, and make it feel like a full AI roleplay platform (reference: Yoodli, studied 2026-11-12), without recordings or video. We take the experience and feature shape, not their name, look or content.
 
 ## Decisions (2026-11-12)
 | Topic | Decision |
@@ -12,8 +12,8 @@ Goal: let anyone try Saarthi, and make it feel like a full AI roleplay platform 
 | Call mode | **Hands-free voice** by default (Chrome speech, no extra cost); typing is the fallback. |
 | Out of scope | Recordings, video, camera, eye contact, pronunciation, avatars on video, sharing links, comments, integrations (Gong, Slack, CRM), multi-persona, memory between calls. |
 
-## What the reference does, and where Saarthi stands
-| Area | Reference | Saarthi today | MVP |
+## What the reference does, and where TalkWise stands
+| Area | Reference | TalkWise today | MVP |
 |---|---|---|---|
 | Library | Cards of ready-made roleplays (type, title, persona name and role, Practice) | Three scenario cards | Cards with persona, difficulty, goals; "Yours" and "Published" sections |
 | Builder | Describe in a sentence → AI fills it; or a template. Sections: description, context ("You..." directions, AI refine), persona, rubric goals with weights, up to 15 objections, conversation settings (voice or chat, who opens, ring sound, end time), allow redo | Admin types a description, AI drafts a scenario | Same sections, AI draft plus edit form, templates |
@@ -23,7 +23,7 @@ Goal: let anyone try Saarthi, and make it feel like a full AI roleplay platform 
 | Learn first | AI tutor teaches, then quizzes | None | Tutor mode on the product facts before a roleplay |
 | Dashboard | Focus analytics (pick up to 4) over time against a target, streak, insights | History with trends per marker | Personal dashboard: focus metrics, streak, insights; admin team view |
 
-Saarthi keeps what the reference lacks: hidden objections, survey markers answered by the customer in character, call checklists with critical items, and live coaching per reply.
+TalkWise keeps what the reference lacks: hidden objections, survey markers answered by the customer in character, call checklists with critical items, and live coaching per reply.
 
 ## Phases
 Each phase ships through staging (checks, evals, commit, push, CI green, auto-deploy) before the next starts.

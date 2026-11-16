@@ -8,7 +8,7 @@ The owner wants the AI customer to look and sound like a real person during a ca
 
 ## Decision
 - The customer's face comes from an Anam stock avatar streamed over WebRTC, and it speaks with an Anam voice. A customer's `voice` (female or male) and name pick the avatar and voice pair (`config/avatars.json`), so the same customer always looks the same.
-- Saarthi still decides every line. Anam's LLM is switched off (`llmId: CUSTOMER_CLIENT_V1`), and the page calls `talk(text)` with the customer's line from our server. No persona, hidden objections or product facts go to Anam: only the name and each line to speak. The agent's microphone is never sent to Anam (`disableInputAudio`). Speech recognition stays in the browser.
+- TalkWise still decides every line. Anam's LLM is switched off (`llmId: CUSTOMER_CLIENT_V1`), and the page calls `talk(text)` with the customer's line from our server. No persona, hidden objections or product facts go to Anam: only the name and each line to speak. The agent's microphone is never sent to Anam (`disableInputAudio`). Speech recognition stays in the browser.
 - The API key stays on the server. `POST /api/sessions/{sid}/avatar` (owner only, open calls only) returns a one-session token that expires in 2 minutes. The token's session length is the call's time limit plus 1 minute.
 - Budget: each token counts the call's planned seconds against `ANAM_MONTHLY_MINUTE_CAP` (default 30, Anam's free plan). Past the cap, without a key, or if Anam refuses, the route answers 204 and the call runs with voice only (ElevenLabs or the browser), as before.
 - Mid-call failures fall back too. If the video doesn't start within 15 seconds, a line isn't spoken, or the stream closes, the page continues with voice.

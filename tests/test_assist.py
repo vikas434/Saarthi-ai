@@ -38,7 +38,7 @@ def test_offline_gives_a_next_move_from_the_first_line(agent1):
 
 def test_offline_moves_on_through_the_call(agent1):
     sid = _start(agent1)
-    for text in ["Hi Meera, thanks for taking the call.", "How do you do your books today?"]:
+    for text in ["Hi Maria, thanks for taking the call.", "How do you do your books today?"]:
         agent1.post(f"/api/sessions/{sid}/turns", json={"text": text})
     assert agent1.post(f"/api/sessions/{sid}/assist").json()["stage"] in STAGES - {"opening"}
 
@@ -46,7 +46,7 @@ def test_offline_moves_on_through_the_call(agent1):
 def test_the_coach_never_sees_hidden_objections(agent1, fake_llm):
     fake = fake_llm(['{"customer": "Okay, go on.", "done": false, "coach": {}}', _move()])
     sid = _start(agent1)
-    agent1.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Meera, how are the books?"})
+    agent1.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Maria, how are the books?"})
     body = agent1.post(f"/api/sessions/{sid}/assist").json()
     assert body["move"] == "Ask what her month-end looks like today."
     assert body["stage"] == "discovery"
@@ -90,6 +90,6 @@ def test_only_the_calls_owner_gets_a_move(agent1, agent2):
 
 def test_no_move_after_the_call_ends(agent1):
     sid = _start(agent1)
-    agent1.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Meera, how are the books?"})
+    agent1.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Maria, how are the books?"})
     agent1.post(f"/api/sessions/{sid}/end")
     assert agent1.post(f"/api/sessions/{sid}/assist").status_code == 409

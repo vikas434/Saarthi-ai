@@ -11,7 +11,7 @@ from app.main import app
 SCENARIO = "price-worried-owner"
 WEAK = ["Um, so basically you should just buy it today, you know."]
 STRONG = [
-    "Hi Meera, thanks for calling. How do you keep your books today?",
+    "Hi Maria, thanks for calling. How do you keep your books today?",
     "That sounds tiring. What would make Sunday evenings easier for you?",
 ]
 

@@ -79,7 +79,7 @@ def _call(client) -> str:
     sid = client.post("/api/sessions", json={"scenario_id": SCENARIO}).json()["id"]
     client.post(
         f"/api/sessions/{sid}/turns",
-        json={"text": "Hi Meera, um, how do you keep your books?", "seconds": 4.0},
+        json={"text": "Hi Maria, um, how do you keep your books?", "seconds": 4.0},
     )
     client.post(f"/api/sessions/{sid}/turns", json={"text": "It's cheap, just sign up today."})
     return sid

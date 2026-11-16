@@ -37,7 +37,7 @@ function renderInsights(d) {
   $("insights").replaceChildren(
     el("div", { className: "chart-head", style: "margin-bottom:12px" },
       el("div", {}, el("h2", { textContent: "Insights" }),
-        el("p", { className: "lede", style: "margin:0", textContent: `What people do with Saarthi and how well it runs. Updated ${updated}. Your own activity is left out.` })),
+        el("p", { className: "lede", style: "margin:0", textContent: `What people do with TalkWise and how well it runs. Updated ${updated}. Your own activity is left out.` })),
       switcher),
     insAlerts(d.alerts),
     el("h3", { textContent: "Adoption" }),

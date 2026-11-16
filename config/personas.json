@@ -1,8 +1,8 @@
 [
-  {"id": "meera", "name": "Meera", "role": "Boutique owner", "mood": "Cautious", "background": "Owner of a clothing boutique with 4 staff. Practical, busy, polite but guarded about money.", "voice": "female"},
-  {"id": "rahul", "name": "Rahul", "role": "Cafe owner", "mood": "Frustrated", "background": "Runs a cafe. Direct, impatient, feels he was oversold.", "voice": "male"},
-  {"id": "ananya", "name": "Ananya", "role": "Freelance designer", "mood": "Curious", "background": "Freelance designer comparing tools. Friendly, asks sharp questions, decides fast.", "voice": "female"},
-  {"id": "kavita", "name": "Kavita", "role": "Finance head", "mood": "Blunt", "background": "Finance head at a mid-size distributor. Numbers first, no patience for vague answers.", "voice": "female"},
-  {"id": "sanjay", "name": "Sanjay", "role": "Hardware store owner", "mood": "Rushed", "background": "Runs a busy family hardware store. Respects people who get to the point.", "voice": "male"},
-  {"id": "dr-rao", "name": "Dr Rao", "role": "Clinic owner", "mood": "Anxious", "background": "Runs a small clinic. Polite, worried that staff will struggle with new software.", "voice": "female"}
+  {"id": "maria", "name": "Maria", "role": "Boutique owner", "mood": "Cautious", "background": "Owner of a clothing boutique in Austin with 4 employees. Practical, busy, polite but guarded about money.", "voice": "female"},
+  {"id": "mike", "name": "Mike", "role": "Cafe owner", "mood": "Frustrated", "background": "Runs a cafe in Denver. Direct, impatient, feels he was oversold.", "voice": "male"},
+  {"id": "emily", "name": "Emily", "role": "Freelance designer", "mood": "Curious", "background": "Freelance designer in Portland comparing tools. Friendly, asks sharp questions, decides fast.", "voice": "female"},
+  {"id": "diane", "name": "Diane", "role": "Finance director", "mood": "Blunt", "background": "Finance director at a mid-size distributor in Ohio. Numbers first, no patience for vague answers.", "voice": "female"},
+  {"id": "tom", "name": "Tom", "role": "Hardware store owner", "mood": "Rushed", "background": "Runs a busy family hardware store in Minnesota. Respects people who get to the point.", "voice": "male"},
+  {"id": "dr-nguyen", "name": "Dr. Nguyen", "role": "Clinic owner", "mood": "Anxious", "background": "Runs a small family clinic in San Jose. Polite, worried that staff will struggle with new software.", "voice": "female"}
 ]

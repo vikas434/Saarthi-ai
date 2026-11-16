@@ -4,7 +4,7 @@
 - Date: 2026-11-11
 
 ## Context
-Saarthi is moving to Railway. SQLite there needs a volume, ties the app to one instance and makes backups manual. Sign-in (Phase 4) and cost tracking (Phase 7) add tables, so schema changes need a repeatable step. Local runs and tests should stay one command with no database server.
+TalkWise is moving to Railway. SQLite there needs a volume, ties the app to one instance and makes backups manual. Sign-in (Phase 4) and cost tracking (Phase 7) add tables, so schema changes need a repeatable step. Local runs and tests should stay one command with no database server.
 
 ## Decision
 - `app/store.py` keeps its functions and talks to the database through SQLAlchemy Core (`text()` queries with named parameters). The same SQL runs on SQLite and Postgres; upserts use `INSERT ... ON CONFLICT ... DO UPDATE`, which both support.

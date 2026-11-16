@@ -1,6 +1,6 @@
-# Saarthi: product design
+# TalkWise: product design
 
-Saarthi means the charioteer who guides. The product coaches agents on any quality marker through realistic practice. The shape follows Yoodli: a left-nav app, one job per screen, a report after every session.
+TalkWise means the charioteer who guides. The product coaches agents on any quality marker through realistic practice. The shape follows Yoodli: a left-nav app, one job per screen, a report after every session.
 
 ## The model: markers sit above behaviours
 Markers such as tNPS and ProSat are outcomes. An agent can't practise an outcome; they practise the behaviours that drive it.

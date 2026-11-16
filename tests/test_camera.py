@@ -17,7 +17,7 @@ def test_camera_numbers_are_stored_per_reply_and_scored(agent1):
     sid = agent1.post("/api/sessions", json={"scenario_id": SCENARIO}).json()["id"]
     agent1.post(
         f"/api/sessions/{sid}/turns",
-        json={"text": "Hi Meera, how do you keep your books?", "camera": _camera()},
+        json={"text": "Hi Maria, how do you keep your books?", "camera": _camera()},
     )
     agent1.post(
         f"/api/sessions/{sid}/turns",
@@ -37,7 +37,7 @@ def test_camera_numbers_are_stored_per_reply_and_scored(agent1):
 
 def test_calls_without_camera_have_no_camera_section(agent1):
     sid = agent1.post("/api/sessions", json={"scenario_id": SCENARIO}).json()["id"]
-    agent1.post(f"/api/sessions/{sid}/turns", json={"text": "Hello Meera"})
+    agent1.post(f"/api/sessions/{sid}/turns", json={"text": "Hello Maria"})
     report = agent1.post(f"/api/sessions/{sid}/end").json()["report"]
     assert report["analytics"]["camera"] is False
     assert not [m for m in report["analytics"]["metrics"] if m["group"] == "camera"]

@@ -16,7 +16,7 @@ _NEXT = re.compile(
 )
 _PUSH = re.compile(r"\b(today only|right now|must|last chance|guarantee)\b", re.IGNORECASE)
 _VALUE = re.compile(
-    r"\b(save|so that|which means|for you|your (sunday|accountant|cafe|invoices))\b", re.IGNORECASE
+    r"\b(save|so that|which means|for you|your (sunday|accountant|cpa|cafe|invoices))\b", re.IGNORECASE
 )
 _GREET = re.compile(r"\b(hi|hello|good (morning|afternoon|evening)|thanks for)\b", re.IGNORECASE)
 

@@ -1,4 +1,4 @@
-"""The video customer (Anam): a short-lived token per call, Saarthi decides every line, a monthly
+"""The video customer (Anam): a short-lived token per call, TalkWise decides every line, a monthly
 minute cap, and voice-only calls whenever video isn't available."""
 
 from datetime import UTC, datetime, timedelta
@@ -77,15 +77,15 @@ def test_token_switches_off_anams_llm_and_keeps_the_key_on_the_server(anam, agen
     persona = sent["json"]["personaConfig"]
     assert persona["llmId"] == "CUSTOMER_CLIENT_V1"
     assert persona["skipGreeting"] is True
-    assert persona["name"] == "Meera"
+    assert persona["name"] == "Maria"
     assert "systemPrompt" not in persona  # no persona, objections or product facts go to Anam
     assert sent["json"]["maxSessions"] == 1
 
 
 def test_same_customer_same_face(anam):
-    meera = {"name": "Meera", "voice": "female"}
+    meera = {"name": "Maria", "voice": "female"}
     assert avatar.pick(meera) == avatar.pick(dict(meera))
-    assert avatar.pick({"name": "Rahul", "voice": "male"})["avatar_id"]  # empty pool falls back
+    assert avatar.pick({"name": "Mike", "voice": "male"})["avatar_id"]  # empty pool falls back
 
 
 def test_only_the_calls_owner_gets_a_token(anam, agent1, agent2):
@@ -95,7 +95,7 @@ def test_only_the_calls_owner_gets_a_token(anam, agent1, agent2):
 
 def test_no_token_after_the_call_ends(anam, agent1):
     sid = _start(agent1)
-    agent1.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Meera, how are the books?"})
+    agent1.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Maria, how are the books?"})
     agent1.post(f"/api/sessions/{sid}/end")
     assert agent1.post(f"/api/sessions/{sid}/avatar").status_code == 409
 

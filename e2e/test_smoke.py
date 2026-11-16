@@ -136,7 +136,7 @@ def test_offline_call_reaches_the_scorecard_and_tabs_open(page: Page) -> None:
     expect(page.locator("#assist-line")).to_be_hidden()
     page.click("#assist-show")
     expect(page.locator("#assist-line")).to_be_visible()
-    _say(page, "Hi Meera, thanks for calling. How do you keep your books today?", 1)
+    _say(page, "Hi Maria, thanks for calling. How do you keep your books today?", 1)
     _say(page, "So you spend Sundays in Excel. That sounds tiring. Shall I set up a trial?", 2)
     expect(page.locator("#coach .note")).to_have_count(2)
     expect(page.locator("#assist-stage")).to_have_text("Discovery")
@@ -166,7 +166,7 @@ def test_offline_call_reaches_the_scorecard_and_tabs_open(page: Page) -> None:
 # A stand-in microphone and voice: the fake recogniser "hears" the next scripted line, the fake
 # voice finishes speaking at once. Real Chrome speech needs a person and a microphone.
 FAKE_VOICE = """
-window.__heard = ["Hi Meera, thanks for calling. How do you keep your books today?",
+window.__heard = ["Hi Maria, thanks for calling. How do you keep your books today?",
                   "That sounds tiring. What would make Sundays easier?"];
 window.__listens = 0;
 class FakeRecognition {
@@ -229,9 +229,9 @@ def test_build_a_roleplay_from_a_template_and_practise_it(page: Page) -> None:
     page.locator("#rp-list tr", has_text="My cold call").locator(
         "button", has_text="Practise"
     ).click()
-    expect(page.locator("#call-title")).to_have_text("Call with Sanjay")
+    expect(page.locator("#call-title")).to_have_text("Call with Tom")
     page.uncheck("#speak")
-    _say(page, "Hi Sanjay, I'll be quick. How do you track stock today?", 1)
+    _say(page, "Hi Tom, I'll be quick. How do you track stock today?", 1)
     page.click("#end")
     expect(page.locator("#report .tile", has_text="Roleplay goals")).to_be_visible()
 
@@ -271,7 +271,7 @@ def test_dashboard_shows_focus_charts_and_team(page: Page) -> None:
     for _ in range(2):
         page.locator("#scenarios button", has_text="Start call").first.click()
         page.uncheck("#speak")
-        _say(page, "Hi Meera, how do you keep your books today?", 1)
+        _say(page, "Hi Maria, how do you keep your books today?", 1)
         page.click("#end")
         expect(page.locator("#report .banner")).to_be_visible()
         page.locator("#report button", has_text="Practise again").click()
@@ -293,7 +293,7 @@ def test_practice_tab_returns_to_the_customer_list(page: Page) -> None:
     page.evaluate("document.getElementById('hands-free').checked = false")
     page.locator("#scenarios button", has_text="Start call").first.click()
     page.uncheck("#speak")
-    _say(page, "Hi Meera, how do you keep your books today?", 1)
+    _say(page, "Hi Maria, how do you keep your books today?", 1)
     page.click('nav button[data-tab="practice"]')
     expect(page.locator("#call")).to_be_visible()  # a call in progress stays open
     page.click("#end")
@@ -334,7 +334,7 @@ def test_customer_speaks_with_the_human_voice_when_the_server_has_it(page: Page)
     page.locator("#scenarios button", has_text="Start call").first.click()
     expect(page.locator("#chat .msg.customer")).to_have_count(1)
     page.wait_for_function("window.__played.length >= 1")
-    _say(page, "Hi Meera, how do you keep your books today?", 1)
+    _say(page, "Hi Maria, how do you keep your books today?", 1)
     page.wait_for_function("window.__played.length >= 2")
     assert [u.rsplit("/", 1)[-1] for u in asked] == ["0", "1"]  # opening line, then reply 1
 
@@ -349,7 +349,7 @@ def test_scoring_shows_a_clear_waiting_panel(page: Page) -> None:
     page.evaluate("document.getElementById('hands-free').checked = false")
     page.locator("#scenarios button", has_text="Start call").first.click()
     page.uncheck("#speak")
-    _say(page, "Hi Meera, how do you keep your books today?", 1)
+    _say(page, "Hi Maria, how do you keep your books today?", 1)
     page.click("#end")
     expect(page.locator("#scoring")).to_be_visible()
     expect(page.locator("#scoring")).to_contain_text("Scoring your call")
@@ -361,11 +361,11 @@ def test_picking_a_persona_renames_the_customer_everywhere(page: Page) -> None:
     _sign_in(page, "agent@example.com")
     page.click('nav button[data-tab="build"]')
     page.locator(".chip", has_text="Cold sales call").click()
-    expect(page.locator("#rp-brief")).to_have_value(re.compile("Sanjay"))
-    page.select_option("#rp-persona-pick", label="Meera · Boutique owner")
-    expect(page.locator("#rp-name")).to_have_value("Meera")
-    expect(page.locator("#rp-brief")).not_to_have_value(re.compile("Sanjay"))
-    expect(page.locator("#rp-brief")).to_have_value(re.compile("Meera"))
+    expect(page.locator("#rp-brief")).to_have_value(re.compile("Tom"))
+    page.select_option("#rp-persona-pick", label="Maria · Boutique owner")
+    expect(page.locator("#rp-name")).to_have_value("Maria")
+    expect(page.locator("#rp-brief")).not_to_have_value(re.compile("Tom"))
+    expect(page.locator("#rp-brief")).to_have_value(re.compile("Maria"))
     expect(page.locator("#rp-voice")).to_have_value("female")
 
 
@@ -374,7 +374,7 @@ def test_admin_insights_show_adoption_health_and_alerts(page: Page) -> None:
     page.evaluate("document.getElementById('hands-free').checked = false")
     page.locator("#scenarios button", has_text="Start call").first.click()
     page.uncheck("#speak")
-    _say(page, "Hi Meera, what made you look at new tools?", 1)
+    _say(page, "Hi Maria, what made you look at new tools?", 1)
     page.click("#end")
     expect(page.locator("#report .banner")).to_be_visible()
     page.click("#sign-out")
@@ -425,7 +425,7 @@ def test_agent_camera_shows_self_view_and_on_camera_analytics(base_url: str) -> 
         expect(page.locator("#self-view")).to_be_visible()
         expect(page.locator("#self-badge")).to_have_text("You · eye contact")
         page.wait_for_timeout(600)  # a few tracked frames
-        _say(page, "Hi Meera, how do you keep your books today?", 1)
+        _say(page, "Hi Maria, how do you keep your books today?", 1)
         page.click("#end")
         expect(page.locator("#report .banner")).to_be_visible()
         expect(page.locator("#self-view")).to_be_hidden()

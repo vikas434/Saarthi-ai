@@ -1,4 +1,4 @@
-"""Saarthi API and the single-page app. Every /api route except /api/auth/config needs sign-in."""
+"""TalkWise API and the single-page app. Every /api route except /api/auth/config needs sign-in."""
 
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="Saarthi",
+    title="TalkWise",
     version="0.2.0",
     lifespan=lifespan,
     docs_url=None,

@@ -1,4 +1,4 @@
-# Deploying Saarthi (free demo track)
+# Deploying TalkWise (free demo track)
 
 Staging only, on free tiers: Render runs the Docker image, Neon holds Postgres, Clerk signs people in. Decisions: [production plan](production-plan.md), ADRs [0002](adr/0002-postgres-behind-database-url.md) and [0003](adr/0003-clerk-sign-in-and-roles.md).
 
@@ -6,7 +6,7 @@ Staging only, on free tiers: Render runs the Docker image, Neon holds Postgres, 
 |---|---|---|
 | App | Render, free plan, Singapore | service `saarthi-staging`, https://saarthi-staging.onrender.com |
 | Database | Neon, free plan, AWS Singapore | project `saarthi`, branch `staging`, database `saarthi`, role `saarthi_app` |
-| Sign-in | Clerk | application `Saarthi`, development instance |
+| Sign-in | Clerk | application `TalkWise`, development instance |
 | Model | Anthropic | `claude-haiku-5-5`, capped at $0.50/day |
 
 ## How a change reaches staging

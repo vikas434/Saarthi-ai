@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Saarthi</title>
+<title>TalkWise</title>
 <link rel="icon" href="data:,">
 <style>
   :root { --ink:#1c1b29; --muted:#6b6a7b; --line:#e3e2ec; --bg:#f6f6fa; --card:#fff;
@@ -123,7 +123,7 @@
 </head>
 <body>
 <header>
-  <h1>Saarthi</h1>
+  <h1>TalkWise</h1>
   <nav class="hidden">
     <button data-tab="practice" aria-current="page">Practice</button>
     <button data-tab="build">Build</button>
@@ -143,7 +143,7 @@
 <main class="hidden">
   <p id="error" class="error hidden" role="alert"></p>
   <div id="welcome" class="card welcome hidden" role="note">
-    <p><strong>Welcome to Saarthi.</strong> This is a free demo. Your practice calls are saved and the admin can read them, so please don't use real customer names or details.</p>
+    <p><strong>Welcome to TalkWise.</strong> This is a free demo. Your practice calls are saved and the admin can read them, so please don't use real customer names or details.</p>
     <button class="ghost" id="welcome-ok">Got it</button>
   </div>
 
@@ -332,7 +332,7 @@ async function signIn() {
       const go = el("button", { className: "primary", id: "clerk-sign-in", textContent: "Sign in" });
       go.addEventListener("click", () => window.Clerk.redirectToSignIn({
         signInForceRedirectUrl: home, signUpForceRedirectUrl: home }));
-      showGate(el("h2", { textContent: "Saarthi" }),
+      showGate(el("h2", { textContent: "TalkWise" }),
         el("p", { className: "muted", textContent: "Practise customer calls with an AI customer and coach." }), go);
       if (location.hash) history.replaceState(null, "", home);  // drop leftovers of the old flow
       return false;
@@ -482,7 +482,7 @@ function handsFreeOn() { return V.canListen && $("hands-free").checked; }
   $("hands-free").checked = V.canListen && pref !== "0";
   $("hands-free").disabled = !V.canListen;
   $("voice-help").textContent = V.canListen
-    ? "Hands-free: the phone rings, the customer speaks first, and Saarthi listens after each line. Pause to send."
+    ? "Hands-free: the phone rings, the customer speaks first, and TalkWise listens after each line. Pause to send."
     : "Hands-free voice needs Chrome. You can type your replies.";
   if (!V.canListen) { $("mic").disabled = true; $("mic").title = "Speech input needs Chrome"; }
   $("hands-free").addEventListener("change", () => {

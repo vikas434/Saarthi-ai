@@ -98,29 +98,29 @@ def test_model_tutor_uses_product_facts_only(agent1):
                     {
                         "intro": "Let's get the facts straight.",
                         "points": [
-                            {"title": "Price", "explain": "Starter is Rs 999 a month."},
+                            {"title": "Price", "explain": "Simple Start is $30 a month."},
                             {"title": "Trial", "explain": "30 days free, no card."},
                             {"title": "Cancel", "explain": "Cancel any time."},
                         ],
                         "questions": [
-                            {"question": "What does Starter cost?", "answer": "Rs 999 a month"},
+                            {"question": "What does Simple Start cost?", "answer": "$30 a month"},
                             {"question": "How long is the trial?", "answer": "30 days"},
                             {"question": "Can she cancel?", "answer": "Any time"},
                         ],
                     }
                 )
             seen["grade"] = system + user
-            return json.dumps({"correct": True, "feedback": "Right.", "ideal": "Rs 999 a month."})
+            return json.dumps({"correct": True, "feedback": "Right.", "ideal": "$30 a month."})
 
     llm.set_llm_for_tests(Tutor())
     lesson = _start(agent1)
-    assert lesson["questions"][0] == "What does Starter cost?"
+    assert lesson["questions"][0] == "What does Simple Start cost?"
     from app import coach
 
     assert coach.load_product()[-60:] in seen["lesson"] and HIDDEN not in seen["lesson"]
     reply = agent1.post(f"/api/tutor/{lesson['id']}/answers", json={"index": 0, "text": "999"})
-    assert reply.json() == {"correct": True, "feedback": "Right.", "ideal": "Rs 999 a month."}
-    assert "Rs 999 a month" in seen["grade"]  # graded against the hidden answer key
+    assert reply.json() == {"correct": True, "feedback": "Right.", "ideal": "$30 a month."}
+    assert "$30 a month" in seen["grade"]  # graded against the hidden answer key
 
 
 def test_offline_lesson_works_with_plain_text_facts():

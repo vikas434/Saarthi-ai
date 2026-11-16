@@ -22,10 +22,10 @@ def test_config_hides_the_customers_hidden_objections(client):
 
 def test_offline_call_end_to_end(client):
     s = start(client)
-    assert "Meera" in s["customer"]
+    assert "Maria" in s["customer"]
     r = client.post(
         f"/api/sessions/{s['id']}/turns",
-        json={"text": "Hi Meera, how do you keep your books today?"},
+        json={"text": "Hi Maria, how do you keep your books today?"},
     )
     body = r.json()
     assert body["customer"] and body["coach"]["verdict"] == "good"
@@ -75,7 +75,7 @@ def test_model_turn_gets_persona_product_and_rubric(client, fake_llm):
     ).json()
     assert r["customer"] == "Well, I use Excel."
     system = fake.calls[0]["system"]
-    assert "Meera" in system and "Rs 999" in system and "discovery" in system
+    assert "Maria" in system and "$30" in system and "discovery" in system
     assert "could not cancel" in system  # hidden objection reaches the model, not the agent
     assert "How do you keep books?" in fake.calls[0]["user"]
 
@@ -116,7 +116,7 @@ def test_report_scores_every_marker_type(client, fake_llm):
         {
             "behaviors": behaviors,
             "checklist": [
-                {"id": "call-checklist.greeting", "result": "yes", "evidence": "Hi Meera"},
+                {"id": "call-checklist.greeting", "result": "yes", "evidence": "Hi Maria"},
                 {"id": "call-checklist.needs", "result": "no", "evidence": "pitched first"},
                 {"id": "call-checklist.next-step", "result": "weird"},
             ],
@@ -140,7 +140,7 @@ def test_report_scores_every_marker_type(client, fake_llm):
 
         def complete(self, *, system, user, max_tokens, schema=None, effort=None):
             if "The call is over" in system:
-                assert "Meera" in system and "0 to 10" in system
+                assert "Maria" in system and "0 to 10" in system
                 return survey_reply
             if "sales coach scoring" in system:
                 assert "call-checklist.needs" in system
@@ -208,7 +208,7 @@ def test_custom_markers_are_scored_on_the_next_call(client):
 
     s = start(client)
     client.post(
-        f"/api/sessions/{s['id']}/turns", json={"text": "Hi Meera, how are the books going?"}
+        f"/api/sessions/{s['id']}/turns", json={"text": "Hi Maria, how are the books going?"}
     )
     report = client.post(f"/api/sessions/{s['id']}/end").json()["report"]
     by_id = {m["id"]: m for m in report["markers"]}

@@ -39,7 +39,7 @@ def eleven(monkeypatch):
 
 def _call_with_reply(c) -> str:
     sid = c.post("/api/sessions", json={"scenario_id": SCENARIO}).json()["id"]
-    c.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Meera, how do you keep your books?"})
+    c.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Maria, how do you keep your books?"})
     return sid
 
 
@@ -106,8 +106,8 @@ def test_voice_follows_the_call_owner(eleven, agent1, agent2):
 
 
 def test_voice_matches_the_customer_and_mood():
-    meera = {"name": "Meera", "voice": "female", "mood": "Cautious"}
-    rahul = {"name": "Rahul", "voice": "male", "mood": "Frustrated"}
+    meera = {"name": "Maria", "voice": "female", "mood": "Cautious"}
+    rahul = {"name": "Mike", "voice": "male", "mood": "Frustrated"}
     assert voice.pick_voice(meera) in voice.VOICES["female"]
     assert voice.pick_voice(rahul) in voice.VOICES["male"]
     assert voice.pick_voice(meera) == voice.pick_voice(meera)  # same customer, same voice

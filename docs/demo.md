@@ -2,7 +2,7 @@
 
 Before: open https://saarthi-staging.onrender.com a minute early (the free server wakes up), and sign in once as the admin (`TEACHER_EMAIL`).
 
-1. **The idea (1 min).** Saarthi lets an agent practise a customer call with an AI customer, coaches each reply live, and scores the call on the team's quality markers: SQS, tNPS, ProSat and a call checklist.
+1. **The idea (1 min).** TalkWise lets an agent practise a customer call with an AI customer, coaches each reply live, and scores the call on the team's quality markers: SQS, tNPS, ProSat and a call checklist.
 2. **Pick a customer (30 s).** Practice → "Price-worried shop owner". Point out the brief: the customer's real concerns are hidden from the agent.
 3. **A good call (3 min).** Open with a question about how she keeps her books today, reflect back what she says, be honest that cash sales are entered by hand, offer the 30-day free trial with no card. Point at the coach notes appearing on the right after each reply.
 4. **The scorecard (2 min).** End the call. Show the marker tiles, the customer's own survey answer in her words, each behaviour with a quote and a "say instead" line, and the checklist.

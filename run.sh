@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# One command to run Saarthi locally: http://localhost:8100
+# One command to run TalkWise locally: http://localhost:8100
 set -e
 cd "$(dirname "$0")"
 git config core.hooksPath .githooks 2>/dev/null || true  # secret scan before each commit
 
-# Saarthi needs Python 3.11 or newer; macOS's default python3 is often older.
+# TalkWise needs Python 3.11 or newer; macOS's default python3 is often older.
 pick_python() {
   for py in python3.13 python3.12 python3.11 python3; do
     if command -v "$py" >/dev/null && "$py" -c 'import sys; sys.exit(sys.version_info < (3, 11))'; then
@@ -14,7 +14,7 @@ pick_python() {
 }
 if [ ! -d .venv ]; then
   PY="$(pick_python)"
-  [ -n "$PY" ] || { echo "Saarthi needs Python 3.11+ (brew install python@3.12)." >&2; exit 1; }
+  [ -n "$PY" ] || { echo "TalkWise needs Python 3.11+ (brew install python@3.12)." >&2; exit 1; }
   "$PY" -m venv .venv
 fi
 .venv/bin/pip -q install -e ".[dev]"

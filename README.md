@@ -1,4 +1,4 @@
-# Saarthi
+# TalkWise
 
 Practise customer calls with an AI customer. A coach comments on every reply, and when the call ends the customer answers a survey in character. The scorecard covers every quality marker the team cares about: SQS, tNPS, ProSat, call checklists, and any marker you add.
 
@@ -10,7 +10,7 @@ Practise customer calls with an AI customer. A coach comments on every reply, an
 
 1. **Pick a customer.** Each scenario has a short brief for the agent; the customer's real concerns stay hidden. Press **Learn first** for a short lesson on the product facts this call needs and three check questions (it counts as one of the day's calls).
    **Or build your own** in the Build tab: describe the call and the AI drafts it, or start from a template (cold call, inbound discovery, upset customer, renewal, support escalation). Edit the persona, context, goals (scored on the scorecard), hidden objections and time limit. Your roleplays are private; the admin can publish one to everyone.
-2. **Talk.** Hands-free by default in Chrome: the phone rings, the customer speaks first, and Saarthi listens after each line; pause to send. Typing always works. Each call has a time limit (6 minutes unless the roleplay sets one) and ends itself when time runs out. The customer speaks only with a natural human voice (ElevenLabs) while the month's voice budget lasts; never a robotic voice, and without one the reply is shown as text. With an Anam key, the customer also appears as a real-time video avatar that says each line; Saarthi still writes every line, and without video the call carries on with voice ([ADR 0010](docs/adr/0010-video-customer-anam.md)). Turn on **My camera** to see yourself during the call and get an "On camera" section on the scorecard (eye contact, smiling, tense expression, face in frame); the face tracking runs in your browser and only those percentages are saved, never video ([ADR 0011](docs/adr/0011-agent-camera-on-device.md)).
+2. **Talk.** Hands-free by default in Chrome: the phone rings, the customer speaks first, and TalkWise listens after each line; pause to send. Typing always works. Each call has a time limit (6 minutes unless the roleplay sets one) and ends itself when time runs out. The customer speaks only with a natural human voice (ElevenLabs) while the month's voice budget lasts; never a robotic voice, and without one the reply is shown as text. With an Anam key, the customer also appears as a real-time video avatar that says each line; TalkWise still writes every line, and without video the call carries on with voice ([ADR 0010](docs/adr/0010-video-customer-anam.md)). Turn on **My camera** to see yourself during the call and get an "On camera" section on the scorecard (eye contact, smiling, tense expression, face in frame); the face tracking runs in your browser and only those percentages are saved, never video ([ADR 0011](docs/adr/0011-agent-camera-on-device.md)).
 3. **Get coached live.** After each reply the coach names one behaviour (good, mixed or improve), quotes you, and suggests a better line. Product claims are checked against the product facts.
 4. **End the call.** The coach scores every behaviour and checklist item while the customer answers the survey, in parallel. The scorecard opens with one overall score, then two tabs: **Coaching** (summary, next drill, every marker, questions to prepare for, and the transcript with a better line under each reply that needed one) and **Analytics** (filler and weak words, sentence starters, reply length, talk time, longest reply, questions asked, and pace for spoken replies; worked out in code, no model cost).
 5. **Track progress.** The Dashboard shows your practice streak, calls this week, two or three plain insights, and up to four focus metrics you choose (overall score, filler words, pace, talk time, questions, any marker) over time against a target. The admin also sees a team table: each person's calls, average, and first-to-latest score. Every call is listed below.
@@ -55,7 +55,7 @@ Needs Python 3.11+ and Chrome.
 The first run creates `.venv` and copies `.env.example` to `.env`. Then edit `.env`:
 
 - **Sign-in without Clerk:** `AUTH_DEV_BYPASS=1` and `TEACHER_EMAIL=` your email; type that email on the sign-in screen. The bypass is refused on any hosted server.
-- **Real coaching:** `ANTHROPIC_API_KEY=`. Without a key Saarthi runs offline: a scripted customer and rule-of-thumb scores, enough to show the flow.
+- **Real coaching:** `ANTHROPIC_API_KEY=`. Without a key TalkWise runs offline: a scripted customer and rule-of-thumb scores, enough to show the flow.
 
 Open http://localhost:8100. Data goes to `data/saarthi.db` (SQLite) unless `DATABASE_URL` points at Postgres.
 
@@ -85,7 +85,7 @@ All configuration is environment variables; `.env.example` lists every one.
 
 ## Cost and limits
 
-Every model call's tokens and cost go into the `usage` table, priced from `config/pricing.json`. A practice call on Haiku 5.5 costs about $0.0034. When today's spend reaches `DAILY_SPEND_CAP_USD`, or a person reaches `MAX_CALLS_PER_USER_PER_DAY`, new calls stop with a clear message; calls in progress finish. Each person sees how many calls they have left today. The admin sees each call's cost on its scorecard. If a model reply can't be used, Saarthi retries once, then falls back to the scripted customer and labels it "backup".
+Every model call's tokens and cost go into the `usage` table, priced from `config/pricing.json`. A practice call on Haiku 5.5 costs about $0.0034. When today's spend reaches `DAILY_SPEND_CAP_USD`, or a person reaches `MAX_CALLS_PER_USER_PER_DAY`, new calls stop with a clear message; calls in progress finish. Each person sees how many calls they have left today. The admin sees each call's cost on its scorecard. If a model reply can't be used, TalkWise retries once, then falls back to the scripted customer and labels it "backup".
 
 Alerts fire when today's spend passes 80% of the cap, the human-voice budget passes 80%, more than 10% of model calls in 24 hours used the backup, 1 in 20 replies take over 8 seconds, more than 2% of requests fail, or nobody has practised for 3 days. Change the thresholds in `config/alerts.json`. The host has no scheduler, so alerts are checked when the admin opens Insights and after API requests (at most every 5 minutes).
 

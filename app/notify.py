@@ -46,7 +46,7 @@ def webhook_url() -> str:
 
 def _message(alert: dict) -> str:
     icon = LEVEL_ICONS.get(alert["level"], ":large_orange_circle:")
-    where = env("RENDER_SERVICE_NAME") or "Saarthi"
+    where = env("RENDER_SERVICE_NAME") or "TalkWise"
     return f"{icon} *{alert['title']}* ({where})\n{alert['reason']}"
 
 

@@ -2,15 +2,15 @@
   "about": "A strong and a weak agent on the same scenario. The scorecard must rank the strong one clearly higher. Lines are played in order whatever the customer says, so the strong lines assume nothing the customer has not been asked yet. Run: python -m app.evals",
   "scenario_id": "price-worried-owner",
   "strong": [
-    "Hi Meera, thanks for taking my call. I'm calling about LedgerLeaf. Before I say anything about it, how do you keep your books today, and what made you ask for a callback?",
-    "So you're doing it yourself in Excel and it takes real time. That sounds tiring. What would you most want to change, and is anything worrying you about switching?",
-    "That makes sense, and I'd rather be honest up front. Starter is Rs 999 a month: automatic bank feeds from 40+ Indian banks, invoicing, and GST-ready reports for your accountant. Cash transactions still have to be entered by hand. Growth is Rs 2,499 and adds payroll, inventory and 3 users, so if your accountant runs payroll you may not need it. Does Starter sound closer to what you need?",
-    "I understand being careful with a monthly bill. Billing is monthly and you can cancel any time, there's a full refund within 14 days of your first payment, and the 30-day free trial needs no card, so there is nothing to cancel if it isn't for you. Moving your Excel data over is included and takes about 2 working days. Does that answer your concerns?",
-    "There's no rush to decide. Whenever it suits you, I can set up the free trial, and we could book 15 minutes next week to look at your first reports together so your accountant gets clean records. Would that work for you?"
+    "Hi Maria, thanks for taking my call. I'm calling about Bluepine Books. Before I say anything about it, how do you keep your books today, and what made you ask for a callback?",
+    "So you're doing it yourself in a spreadsheet and it takes real time. That sounds tiring. What would you most want to change, and is anything worrying you about switching?",
+    "That makes sense, and I'd rather be honest up front. Simple Start is $30 a month: automatic bank connections with 12,000+ US banks, invoicing, and tax-time reports for your CPA. Cash transactions still have to be entered by hand. Essentials is $60 and adds bill pay, time tracking and 3 users, so if it's just you running the boutique you may not need it. Does Simple Start sound closer to what you need?",
+    "I understand being careful with a monthly bill. Billing is monthly and you can cancel any time, there's a full refund within 30 days of your first payment, and the 30-day free trial needs no credit card, so there is nothing to cancel if it isn't for you. Moving your spreadsheet over is included and takes about 2 business days. Does that answer your concerns?",
+    "There's no rush to decide. Whenever it suits you, I can set up the free trial, and we could book 15 minutes next week to look at your first reports together so your CPA gets clean records. Would that work for you?"
   ],
   "weak": [
-    "LedgerLeaf is the best accounting software with bank feeds, invoicing, payroll, inventory and GST reports.",
-    "It is only Rs 2,499 and it will guarantee you save tax. You must sign up today.",
+    "Bluepine Books is the best accounting software with bank connections, invoicing, payroll, inventory and tax reports.",
+    "It is only $90 and it will guarantee you save on taxes. You must sign up today.",
     "Everyone uses it. The data import happens the same day. Just give me your card details right now.",
     "As I said it has many features. This offer is today only, last chance."
   ]

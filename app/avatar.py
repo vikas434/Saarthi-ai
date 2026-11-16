@@ -1,6 +1,6 @@
 """The customer's face on a call: a real-time Anam avatar that says the customer's lines.
 
-Saarthi still decides every line (the model plays the customer and keeps the hidden objections on
+TalkWise still decides every line (the model plays the customer and keeps the hidden objections on
 the server). Anam only gets the customer's lines to speak: its own LLM is switched off with
 `CUSTOMER_CLIENT_V1`, and the agent's microphone never goes to Anam. The server hands the page a
 short-lived session token; the API key never leaves the server.

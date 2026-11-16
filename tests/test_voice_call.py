@@ -13,7 +13,7 @@ def _start(c) -> str:
 
 def test_spoken_reply_keeps_its_speaking_time(client):
     sid = _start(client)
-    res = client.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Meera", "seconds": 3.4})
+    res = client.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Maria", "seconds": 3.4})
     assert res.status_code == 200
     turns = client.get(f"/api/sessions/{sid}").json()["turns"]
     assert turns[-1]["agent_seconds"] == 3.4
@@ -21,7 +21,7 @@ def test_spoken_reply_keeps_its_speaking_time(client):
 
 def test_typed_reply_has_no_speaking_time(client):
     sid = _start(client)
-    client.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Meera"})
+    client.post(f"/api/sessions/{sid}/turns", json={"text": "Hi Maria"})
     assert client.get(f"/api/sessions/{sid}").json()["turns"][-1]["agent_seconds"] is None
 
 
@@ -48,7 +48,7 @@ def test_a_roleplay_can_set_its_own_time_limit():
 def test_reply_cap_stops_long_calls(monkeypatch, client):
     monkeypatch.setenv("MAX_REPLIES_PER_CALL", "2")
     sid = _start(client)
-    for text in ("Hi Meera", "How do you keep your books?"):
+    for text in ("Hi Maria", "How do you keep your books?"):
         assert client.post(f"/api/sessions/{sid}/turns", json={"text": text}).status_code == 200
     blocked = client.post(f"/api/sessions/{sid}/turns", json={"text": "One more thing"})
     assert blocked.status_code == 409 and "reply limit" in blocked.json()["detail"]

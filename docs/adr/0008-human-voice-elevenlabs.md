@@ -18,7 +18,7 @@ The browser's speech synthesis sounds robotic, which breaks the feeling of a rea
 
 ## Consequences
 - About 10 to 20 human-voiced calls a month on the free plan; after that, the browser voice. A paid ElevenLabs plan only needs a bigger `ELEVENLABS_MONTHLY_CHAR_CAP` (and a price in `config/pricing.json` so it counts toward the daily spend cap).
-- Free-plan audio is for non-commercial use; a paid plan is needed before Saarthi is sold.
+- Free-plan audio is for non-commercial use; a paid plan is needed before TalkWise is sold.
 - New secret: `ELEVENLABS_API_KEY`, in `.env` and Render only.
 
 ## Amendment (2026-11-13): no robotic voice

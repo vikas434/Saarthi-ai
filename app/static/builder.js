@@ -34,7 +34,7 @@ function renderBuilderHome() {
   }
   box.replaceChildren(
     el("h2", { textContent: "What's your roleplay about?" }),
-    el("p", { className: "lede", textContent: "Describe the customer and the call. Saarthi drafts the persona, context, goals and hidden objections; you review and edit before saving." }),
+    el("p", { className: "lede", textContent: "Describe the customer and the call. TalkWise drafts the persona, context, goals and hidden objections; you review and edit before saving." }),
     el("div", { className: "card", style: "margin-bottom:16px" }, describe,
       el("div", { className: "row" }, create, status),
       el("p", { className: "muted", style: "margin:14px 0 8px", textContent: "Or start with a template:" }), chips),

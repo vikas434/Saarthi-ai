@@ -4,7 +4,7 @@
 - Date: 2026-11-12
 
 ## Context
-The owner wants to decide what to build next from evidence: are people trying Saarthi and coming back, which features they use, where they drop off, whether scores improve, what each active person costs, and whether the service is healthy. Calls, replies, scores and model spend are already stored. Request timings, errors and fallbacks (the offline coach after a model error, the browser voice after ElevenLabs fails) were only written to the host's logs, which are short-lived.
+The owner wants to decide what to build next from evidence: are people trying TalkWise and coming back, which features they use, where they drop off, whether scores improve, what each active person costs, and whether the service is healthy. Calls, replies, scores and model spend are already stored. Request timings, errors and fallbacks (the offline coach after a model error, the browser voice after ElevenLabs fails) were only written to the host's logs, which are short-lived.
 
 ## Decision
 - A new `events` table (migration 0008) with two kinds:
@@ -18,5 +18,5 @@ The owner wants to decide what to build next from evidence: are people trying Sa
 ## Consequences
 - One extra small insert per API request. At demo traffic (hundreds of requests a day) this is well within the free Postgres plan; 30-day retention bounds the table.
 - Latency is measured inside the app, so it excludes network time and the host's cold starts.
-- Alerts can be late when nobody uses the app, which is also when they matter least. A real scheduler or an uptime monitor is needed before customers depend on Saarthi.
+- Alerts can be late when nobody uses the app, which is also when they matter least. A real scheduler or an uptime monitor is needed before customers depend on TalkWise.
 - `SLACK_WEBHOOK_URL` is a secret: in `.env` and Render only.

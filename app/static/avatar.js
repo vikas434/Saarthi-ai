@@ -1,5 +1,5 @@
 // The video customer: a real-time Anam avatar that says the customer's lines on a call.
-// Saarthi decides every line; the avatar only speaks it. The agent's microphone is never sent to
+// TalkWise decides every line; the avatar only speaks it. The agent's microphone is never sent to
 // Anam (disableInputAudio). Anything going wrong returns false, and the page uses voice only.
 "use strict";
 (() => {
