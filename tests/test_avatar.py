@@ -102,7 +102,10 @@ def test_no_token_after_the_call_ends(anam, agent1):
 
 def test_minutes_left_come_from_anams_own_usage(anam, agent1):
     now = datetime.now(UTC)
-    anam.sessions = [_session(now - timedelta(minutes=5), 180), _session(now - timedelta(hours=1), 120)]
+    anam.sessions = [
+        _session(now - timedelta(minutes=5), 180),
+        _session(now - timedelta(hours=1), 120),
+    ]
     avatar.reset_for_tests()
     cfg = agent1.get("/api/config").json()["avatar"]
     assert cfg["minutes_left"] == 25 and cfg["minutes_total"] == 30

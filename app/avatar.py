@@ -124,7 +124,7 @@ def _anam_seconds(start: datetime, now: datetime) -> int:
     res.raise_for_status()
     total = 0.0
     for row in res.json().get("data", []):
-        began = datetime.fromisoformat(str(row.get("startTime", "")).replace("Z", "+00:00"))
+        began = datetime.fromisoformat(str(row.get("startTime", "")))
         if began < start:
             continue
         length = (row.get("sessionLengthMs") or 0) / 1000
