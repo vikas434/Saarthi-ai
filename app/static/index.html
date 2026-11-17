@@ -187,6 +187,7 @@
           <p id="voice-status" class="muted" aria-live="polite"></p>
           <div class="row">
             <label><input type="checkbox" id="speak" checked> Customer speaks aloud</label>
+            <button type="button" class="ghost hidden" id="video-toggle" style="padding:4px 10px;font-size:13px">📹 Video off</button>
             <label><input type="checkbox" id="live" checked> Live coaching</label>
             <label title="The coach suggests your next move while the customer speaks"><input type="checkbox" id="assist-on" checked> Coach assist</label>
             <span style="flex:1"></span>
@@ -496,19 +497,37 @@ const VIDEO_KEY = "saarthi.video";
 function videoOffered() { return Boolean(cfg?.avatar && window.SaarthiAvatar); }
 function videoWanted() {
   if (!videoOffered()) return false;
-  try { return localStorage.getItem(VIDEO_KEY) !== "0"; } catch { return true; }
+  try { return localStorage.getItem(VIDEO_KEY) === "1"; } catch { return false; }  // off unless chosen: video uses Anam minutes
+}
+function setVideoWanted(on) {
+  try { localStorage.setItem(VIDEO_KEY, on ? "1" : "0"); } catch {}
+  $("video-customer").checked = on;
 }
 function showVideoOption() {
   $("video-label").classList.toggle("hidden", !videoOffered());
   $("video-customer").checked = videoWanted();
 }
-$("video-customer").addEventListener("change", () => {
-  try { localStorage.setItem(VIDEO_KEY, $("video-customer").checked ? "1" : "0"); } catch {}
-});
+$("video-customer").addEventListener("change", () => setVideoWanted($("video-customer").checked));
 function hideVideo() {
   window.SaarthiAvatar?.stop();
   $("avatar").classList.add("hidden"); $("call-main").classList.remove("with-video"); $("stage").classList.remove("with-video");
+  syncVideoButton();
 }
+// The in-call button: turning video off ends the Anam stream, which stops using video minutes.
+function syncVideoButton() {
+  const b = $("video-toggle"), on = Boolean(window.SaarthiAvatar?.active);
+  b.classList.toggle("hidden", !videoOffered() || !session);
+  b.textContent = on ? "📹 Video on" : "📹 Video off";
+  b.title = on ? "Turn video off to save video minutes" : "Turn video on";
+}
+$("video-toggle").addEventListener("click", async () => {
+  if (!session || scoring) return;
+  $("video-toggle").disabled = true;
+  try {
+    if (window.SaarthiAvatar?.active) { setVideoWanted(false); hideVideo(); }
+    else { setVideoWanted(true); await startVideo(session); }
+  } finally { $("video-toggle").disabled = false; syncVideoButton(); }
+});
 
 // The agent's own camera (/camera.js): self-view and on-camera numbers, nothing else leaves the device.
 const CAMERA_KEY = "saarthi.camera";
@@ -539,13 +558,14 @@ async function startCamera() {
 function stopCamera() { window.SaarthiCamera?.stop(); $("self-view").classList.add("hidden"); }
 // Starts connecting at once; resolves true when the customer's video is playing.
 async function startVideo(data) {
-  if (!videoWanted()) return false;
+  if (!videoWanted()) { syncVideoButton(); return false; }
   $("avatar-name").textContent = data.scenario.customer_name;
   const ok = await window.SaarthiAvatar.start({
     sessionId: data.id, sdk: cfg.avatar.sdk, headers: await authHeaders(),
     onClose: () => { if (session?.id === data.id && !scoring) { hideVideo(); voiceStatus("The video ended. The call continues with voice."); } },
   });
   if (ok && session?.id === data.id) { $("avatar").classList.remove("hidden"); $("call-main").classList.add("with-video"); $("stage").classList.add("with-video"); }
+  syncVideoButton();
   return ok;
 }
 function setMic(on) { $("mic").classList.toggle("on", on); $("mic").textContent = on ? "■ Done" : "🎤 Speak"; }
